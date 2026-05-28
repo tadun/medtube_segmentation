@@ -1,0 +1,14 @@
+# Virtual environments
+rs_env/
+sort_env/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.mypy_cache/
+
+# macOS
+.DS_Store
