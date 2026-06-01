@@ -10,5 +10,8 @@ __pycache__/
 *.pyd
 .mypy_cache/
 
+# Dataset (large binary files — collect locally)
+dataset/
+
 # macOS
 .DS_Store
