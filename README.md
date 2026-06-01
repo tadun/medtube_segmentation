@@ -48,12 +48,12 @@ Prompts for a session label on startup (e.g. `single`, `pairs`, `mixed`).
 | `S`     | Save a single frame immediately     |
 | `Q`     | Quit                                |
 
-**Output**
+#### Folder structure
 
-```
+```text
 dataset/
-  YYYY-MM-DD_HH-MM-SS_<label>/
-    rgb/          Colour PNGs  (1280 × 720, BGR)
+  YYYY-MM-DD_HH-MM-SS_LABEL/
+    rgb/          Colour PNGs  (1280 x 720, BGR)
     depth_raw/    16-bit PNGs  (Z16, millimetres)
     metadata.csv  frame index + Unix timestamp per saved frame
 ```
@@ -83,7 +83,7 @@ rs_env/bin/python train_compare.py
 
 Expects the dataset in YOLO segmentation format under `data/`:
 
-```
+```text
 data/
   dataset.yaml
   train/
@@ -96,9 +96,9 @@ data/
 
 Export from Roboflow in **YOLOv8 format** — the download unpacks directly into this structure.
 
-**Output**
+#### Run output
 
-```
+```text
 runs/
   YYYY-MM-DD_HH-MM-SS/
     YOLOv8-seg/weights/best.pt
@@ -111,7 +111,7 @@ runs/
 
 ## Project Structure
 
-```
+```text
 medtube_segmentation/
   collect_dataset.py    Dataset collection
   realsense_stream.py   Live preview
