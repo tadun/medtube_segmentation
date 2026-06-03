@@ -24,6 +24,7 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import csv
+import os
 import re
 import subprocess
 import time
@@ -37,6 +38,13 @@ COLOR_FPS    = 30
 DEPTH_WIDTH  = 1280
 DEPTH_HEIGHT = 720
 DEPTH_FPS    = 30
+
+# RGB exposure tuning (D415): default to auto exposure to match earlier datasets.
+# Set COLOR_ENABLE_AUTO_EXPOSURE=False to use manual exposure/gain values.
+COLOR_ENABLE_AUTO_EXPOSURE = True
+COLOR_EXPOSURE_US = 220.0
+COLOR_GAIN = 64.0
+COLOR_ENABLE_AUTO_WHITE_BALANCE = True
 
 RECONNECT_DELAY  = 3
 MAX_RETRIES      = 10
@@ -65,6 +73,19 @@ MIN_VALID_ROW_RATIO = 0.10
 # Use this to pull your hands clear of the frame.
 RECORD_DELAY_S = 3
 
+DATA_OWNER_UID = int(os.environ["SUDO_UID"]) if "SUDO_UID" in os.environ else None
+DATA_OWNER_GID = int(os.environ["SUDO_GID"]) if "SUDO_GID" in os.environ else None
+
+
+def ensure_user_ownership(path: Path):
+    """If run via sudo, reassign files/dirs to the invoking user for easy editing."""
+    if DATA_OWNER_UID is None or DATA_OWNER_GID is None:
+        return
+    try:
+        os.chown(path, DATA_OWNER_UID, DATA_OWNER_GID)
+    except OSError:
+        pass
+
 
 
 def create_session_dirs(tube_number: str):
@@ -72,15 +93,33 @@ def create_session_dirs(tube_number: str):
     base = Path("dataset") / session_name
     (base / "rgb").mkdir(parents=True, exist_ok=True)
     (base / "depth").mkdir(parents=True, exist_ok=True)
+    ensure_user_ownership(base)
+    ensure_user_ownership(base / "rgb")
+    ensure_user_ownership(base / "depth")
     return base
 
 
-def open_csv(base: Path, tube_number: str):
+def open_csv(base: Path, tube_number: str, append: bool):
     csv_path = base / f"tube_{tube_number}.csv"
-    f = open(csv_path, "w", newline="")
+    mode = "a" if append else "w"
+    f = open(csv_path, mode, newline="")
+    ensure_user_ownership(csv_path)
     writer = csv.writer(f)
-    writer.writerow(["frame_index", "timestamp", "rgb_filename", "depth_filename"])
+    if (not append) or csv_path.stat().st_size == 0:
+        writer.writerow(["frame_index", "timestamp", "rgb_filename", "depth_filename"])
     return f, writer
+
+
+def next_frame_index(base: Path, tube_number: str) -> int:
+    """Return next frame index based on existing RGB filenames."""
+    rgb_dir = base / "rgb"
+    pat = re.compile(rf"^tube_{re.escape(tube_number)}_rgb_(\d+)$")
+    max_idx = 0
+    for p in rgb_dir.glob("*.png"):
+        m = pat.match(p.stem)
+        if m:
+            max_idx = max(max_idx, int(m.group(1)))
+    return max_idx + 1
 
 
 # ── Frame saving ─────────────────────────────────────────────────────────────
@@ -133,8 +172,12 @@ def save_frame(base, writer, frame_idx, tube_number, color_image, depth_mm):
     rgb_stem = f"tube_{tube_number}_rgb_{frame_idx:03d}"
     depth_stem = f"tube_{tube_number}_depth_{frame_idx:03d}"
     depth_colour = depth_to_preview(depth_mm)
-    cv2.imwrite(str(base / "rgb" / f"{rgb_stem}.png"), color_image)
-    cv2.imwrite(str(base / "depth" / f"{depth_stem}.png"), depth_colour)
+    rgb_path = base / "rgb" / f"{rgb_stem}.png"
+    depth_path = base / "depth" / f"{depth_stem}.png"
+    cv2.imwrite(str(rgb_path), color_image)
+    cv2.imwrite(str(depth_path), depth_colour)
+    ensure_user_ownership(rgb_path)
+    ensure_user_ownership(depth_path)
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     writer.writerow([frame_idx, timestamp, rgb_stem, depth_stem])
 
@@ -191,6 +234,57 @@ def build_config():
     cfg.enable_stream(rs.stream.color, COLOR_WIDTH, COLOR_HEIGHT, rs.format.bgr8, COLOR_FPS)
     cfg.enable_stream(rs.stream.depth, DEPTH_WIDTH, DEPTH_HEIGHT, rs.format.z16,  DEPTH_FPS)
     return cfg
+
+
+def set_sensor_option_safe(sensor, option, value: float, label: str):
+    """Set sensor option with range-clamp and graceful fallback if unsupported."""
+    if not sensor.supports(option):
+        return
+    try:
+        rng = sensor.get_option_range(option)
+        clamped = min(max(value, rng.min), rng.max)
+        sensor.set_option(option, clamped)
+        if clamped != value:
+            print(f"[info] {label} clamped to {clamped:.2f}")
+    except RuntimeError as e:
+        print(f"[warn] Could not set {label}: {e}")
+
+
+def configure_color_sensor(profile):
+    """Apply RGB exposure settings to reduce overexposure in captured frames."""
+    device = profile.get_device()
+    color_sensor = None
+
+    for sensor in device.query_sensors():
+        try:
+            name = sensor.get_info(rs.camera_info.name).lower()
+        except RuntimeError:
+            continue
+        if "rgb" in name or "color" in name:
+            color_sensor = sensor
+            break
+
+    if color_sensor is None:
+        print("[warn] Color sensor not found; skipping exposure tuning")
+        return
+
+    set_sensor_option_safe(
+        color_sensor,
+        rs.option.enable_auto_exposure,
+        1.0 if COLOR_ENABLE_AUTO_EXPOSURE else 0.0,
+        "enable_auto_exposure",
+    )
+
+    if not COLOR_ENABLE_AUTO_EXPOSURE:
+        set_sensor_option_safe(color_sensor, rs.option.exposure, COLOR_EXPOSURE_US, "exposure")
+        set_sensor_option_safe(color_sensor, rs.option.gain, COLOR_GAIN, "gain")
+
+    set_sensor_option_safe(
+        color_sensor,
+        rs.option.enable_auto_white_balance,
+        1.0 if COLOR_ENABLE_AUTO_WHITE_BALANCE else 0.0,
+        "enable_auto_white_balance",
+    )
 
 
 # ── Main stream / collect loop ────────────────────────────────────────────────
@@ -312,15 +406,22 @@ def main():
         tube_number = "1"
 
     base = create_session_dirs(tube_number)
-    csv_file, writer = open_csv(base, tube_number)
+    start_idx = next_frame_index(base, tube_number)
+    append_mode = start_idx > 1
+    csv_file, writer = open_csv(base, tube_number, append=append_mode)
+    ensure_user_ownership(base / f"tube_{tube_number}.csv")
     print(f"[info] Session folder: {base}")
+    if append_mode:
+        print(f"[info] Append mode — next frame index: {start_idx}")
+    else:
+        print("[info] New dataset — starting at frame index 1")
     print("[info] Controls: SPACE/S=save single  R=record/pause  Q=quit")
 
     screen_w  = get_screen_width()
     align     = rs.align(rs.stream.color)
     state = {
-        "frame_idx":        1,
-        "saved_count":      0,
+        "frame_idx":        start_idx,
+        "saved_count":      start_idx - 1,
         "live_count":       0,
         "label":            f"tube_{tube_number}",
         "tube_number":      tube_number,
@@ -340,6 +441,7 @@ def main():
         pipeline = rs.pipeline()
         try:
             profile = pipeline.start(build_config())
+            configure_color_sensor(profile)
         except RuntimeError as e:
             print(f"[error] Could not start pipeline: {e}")
             print(f"  Retrying in {RECONNECT_DELAY}s… ({retries + 1}/{MAX_RETRIES})")
