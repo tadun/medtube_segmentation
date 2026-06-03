@@ -3,18 +3,18 @@ Medical tube dataset collector — RealSense D415
 ================================================
 Controls
 --------
-  Space     Toggle recording on/off
-  S         Save a single frame (works whether recording or paused)
-  Q         Quit and save session summary
+    Space     Save a single frame (recommended for one-by-one capture)
+    R         Toggle recording on/off
+    S         Save a single frame (alias for Space)
+    Q         Quit and save session summary
 
 Output structure
 ----------------
   dataset/
-    <YYYYMMDD_HHMMSS>/
-      rgb/              colour PNGs  (frame_00000.png …)
-      depth_raw/        16-bit PNGs  (frame_00000.png …)
-      depth_colour/     colourised PNGs for visual inspection
-      metadata.csv      timestamp, frame index per saved frame
+        tube_<number>/
+            rgb/              colour PNGs  (tube_<number>_rgb_001.png …)
+            depth/            colourised depth PNGs  (tube_<number>_depth_001.png …)
+            tube_<number>.csv timestamp, frame index per saved frame
 
 Run with:
   sudo rs_env/bin/python collect_dataset.py
@@ -45,62 +45,98 @@ MAX_RETRIES      = 10
 # Increase this if frames are too similar (e.g. 1.0 = 1 frame/s).
 SAVE_INTERVAL_S  = 0.5
 
-# Depth display range in mm (does NOT affect saved raw data).
-# Bright = close, dark = far, black = no IR return.
-# D415 hardware minimum reliable range is ~280 mm.
-# Widen MAX if objects are further away.
-DEPTH_MIN_MM = 150
-DEPTH_MAX_MM = 600
+# Scene priors (mm): table/surface is ~480-510 mm away; thickest tube is ~40 mm.
+# We use these to generate depth colour previews.
+SURFACE_DISTANCE_MM = 495
+TUBE_MAX_THICKNESS_MM = 40
+DEPTH_NEAR_MARGIN_MM = 20
+DEPTH_FAR_MARGIN_MM = 40
+DEPTH_MIN_MM = SURFACE_DISTANCE_MM - TUBE_MAX_THICKNESS_MM - DEPTH_NEAR_MARGIN_MM
+DEPTH_MAX_MM = SURFACE_DISTANCE_MM + DEPTH_FAR_MARGIN_MM
 
-# Centre-crop factor applied before saving AND display.
-# 1.0 = full frame. 0.6 = use centre 60% of each axis (zoom in ~1.67x).
-# Useful when the camera is further away and tubes appear small.
-CROP_FACTOR = 1.0
+# Crop both RGB and depth to the depth-visible area (valid depth > 0).
+CROP_TO_DEPTH_FOV = True
+DEPTH_FOV_PAD_PX = 2
+MIN_VALID_DEPTH_PIXELS = 1000
+MIN_VALID_COL_RATIO = 0.10
+MIN_VALID_ROW_RATIO = 0.10
 
 # Seconds to count down after pressing Space before recording starts.
 # Use this to pull your hands clear of the frame.
 RECORD_DELAY_S = 3
 
 
-# ── Centre crop ──────────────────────────────────────────────────────────────
 
-def centre_crop(img: np.ndarray, factor: float) -> np.ndarray:
-    """Crop the centre `factor` fraction of img and upscale back to original size."""
-    if factor >= 1.0:
-        return img
-    h, w = img.shape[:2]
-    ch, cw = int(h * factor), int(w * factor)
-    y0, x0 = (h - ch) // 2, (w - cw) // 2
-    cropped = img[y0:y0 + ch, x0:x0 + cw]
-    return cv2.resize(cropped, (w, h), interpolation=cv2.INTER_LINEAR)
-
-
-
-def create_session_dirs(label: str):
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    slug      = label.strip().lower().replace(" ", "_") if label.strip() else "session"
-    session_name = f"{timestamp}_{slug}"
+def create_session_dirs(tube_number: str):
+    session_name = f"tube_{tube_number}"
     base = Path("dataset") / session_name
     (base / "rgb").mkdir(parents=True, exist_ok=True)
-    (base / "depth_raw").mkdir(parents=True, exist_ok=True)
+    (base / "depth").mkdir(parents=True, exist_ok=True)
     return base
 
 
-def open_csv(base: Path):
-    csv_path = base / "metadata.csv"
+def open_csv(base: Path, tube_number: str):
+    csv_path = base / f"tube_{tube_number}.csv"
     f = open(csv_path, "w", newline="")
     writer = csv.writer(f)
-    writer.writerow(["frame_index", "timestamp_s", "filename"])
+    writer.writerow(["frame_index", "timestamp", "rgb_filename", "depth_filename"])
     return f, writer
 
 
 # ── Frame saving ─────────────────────────────────────────────────────────────
 
-def save_frame(base, writer, frame_idx, color_image, depth_raw):
-    stem = f"frame_{frame_idx:05d}"
-    cv2.imwrite(str(base / "rgb"       / f"{stem}.png"), color_image)
-    cv2.imwrite(str(base / "depth_raw" / f"{stem}.png"), depth_raw)
-    writer.writerow([frame_idx, f"{time.time():.6f}", stem])
+def depth_to_preview(depth_raw: np.ndarray) -> np.ndarray:
+    """Create a colorised depth preview tuned for the capture setup."""
+    valid_mask = depth_raw > 0
+    depth_clipped = np.clip(depth_raw, DEPTH_MIN_MM, DEPTH_MAX_MM).astype(np.float32)
+    depth_8bit = ((depth_clipped - DEPTH_MIN_MM) / (DEPTH_MAX_MM - DEPTH_MIN_MM) * 255).astype(np.uint8)
+    depth_8bit[~valid_mask] = 0
+    depth_colour = cv2.applyColorMap(depth_8bit, cv2.COLORMAP_TURBO)
+    depth_colour[~valid_mask] = 0
+    return depth_colour
+
+
+def compute_depth_valid_roi(depth_mm: np.ndarray, pad_px: int = 0):
+    """Return (y0, y1, x0, x1) ROI for valid depth pixels, or None if unstable."""
+    valid = depth_mm > 0
+    ys, xs = np.where(valid)
+    if ys.size < MIN_VALID_DEPTH_PIXELS:
+        return None
+
+    h, w = depth_mm.shape[:2]
+    # Suppress sparse edge noise by requiring a minimum fraction of valid pixels
+    # along each row/column before accepting it into the crop.
+    min_col_valid = max(1, int(h * MIN_VALID_COL_RATIO))
+    min_row_valid = max(1, int(w * MIN_VALID_ROW_RATIO))
+    col_counts = valid.sum(axis=0)
+    row_counts = valid.sum(axis=1)
+    strong_cols = np.where(col_counts >= min_col_valid)[0]
+    strong_rows = np.where(row_counts >= min_row_valid)[0]
+
+    if strong_cols.size and strong_rows.size:
+        x0 = max(0, int(strong_cols.min()) - pad_px)
+        x1 = min(w, int(strong_cols.max()) + 1 + pad_px)
+        y0 = max(0, int(strong_rows.min()) - pad_px)
+        y1 = min(h, int(strong_rows.max()) + 1 + pad_px)
+    else:
+        y0 = max(0, int(ys.min()) - pad_px)
+        y1 = min(h, int(ys.max()) + 1 + pad_px)
+        x0 = max(0, int(xs.min()) - pad_px)
+        x1 = min(w, int(xs.max()) + 1 + pad_px)
+
+    if (x1 - x0) < 32 or (y1 - y0) < 32:
+        return None
+    return (y0, y1, x0, x1)
+
+
+def save_frame(base, writer, frame_idx, tube_number, color_image, depth_mm):
+    rgb_stem = f"tube_{tube_number}_rgb_{frame_idx:03d}"
+    depth_stem = f"tube_{tube_number}_depth_{frame_idx:03d}"
+    depth_colour = depth_to_preview(depth_mm)
+    cv2.imwrite(str(base / "rgb" / f"{rgb_stem}.png"), color_image)
+    cv2.imwrite(str(base / "depth" / f"{depth_stem}.png"), depth_colour)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    writer.writerow([frame_idx, timestamp, rgb_stem, depth_stem])
 
 
 # ── Overlay HUD ──────────────────────────────────────────────────────────────
@@ -135,7 +171,7 @@ def draw_hud(canvas, recording, counting_down, countdown_remaining,
     left_text  = (f"{rec_text}  rec {fmt_hms(rec_elapsed_s)}  "
                   f"live {fmt_hms(session_elapsed_s)}    "
                   f"Saved: {saved_count}    [{label}]")
-    right_text = "SPACE = rec/pause     S = save frame     Q = quit"
+    right_text = "SPACE/S = save frame     R = rec/pause     Q = quit"
 
     cv2.putText(bar, left_text,
                 (HUD_MARGIN, 32), cv2.FONT_HERSHEY_SIMPLEX, 0.65, rec_color, 2, cv2.LINE_AA)
@@ -159,7 +195,7 @@ def build_config():
 
 # ── Main stream / collect loop ────────────────────────────────────────────────
 
-def collect_loop(pipeline, align, colorizer, base, writer, state):
+def collect_loop(pipeline, align, base, writer, state):
     """
     state dict keys: frame_idx, saved_count, live_count, recording
     Returns True  → clean quit
@@ -182,20 +218,24 @@ def collect_loop(pipeline, align, colorizer, base, writer, state):
 
         session_elapsed = time.time() - state["session_start_ts"]
         color_image    = np.asanyarray(color_frame.get_data())
-        depth_raw_full = np.asanyarray(depth_frame.get_data())   # uint16, mm units
+        depth_mm = np.asanyarray(depth_frame.get_data())   # uint16, mm units
 
-        # Apply centre crop to both images before saving and display
-        color_image = centre_crop(color_image, CROP_FACTOR)
-        depth_raw   = centre_crop(depth_raw_full, CROP_FACTOR)
+        if CROP_TO_DEPTH_FOV and state["depth_roi"] is None:
+            roi = compute_depth_valid_roi(depth_mm, pad_px=DEPTH_FOV_PAD_PX)
+            if roi is not None:
+                state["depth_roi"] = roi
+                y0, y1, x0, x1 = roi
+                print(f"[info] Depth ROI locked: x={x0}:{x1}, y={y0}:{y1}")
 
-        # Normalise depth into 8-bit grayscale for display.
-        # Pixels with depth == 0 are invalid (no IR return); render them black.
-        valid_mask    = depth_raw > 0
-        depth_clipped = np.clip(depth_raw, DEPTH_MIN_MM, DEPTH_MAX_MM).astype(np.float32)
-        depth_8bit    = ((depth_clipped - DEPTH_MIN_MM) / (DEPTH_MAX_MM - DEPTH_MIN_MM) * 255).astype(np.uint8)
-        depth_8bit[~valid_mask] = 0  # invalid pixels -> black
-        depth_display_gray = cv2.resize(depth_8bit, (COLOR_WIDTH, COLOR_HEIGHT))
-        depth_display = cv2.cvtColor(depth_display_gray, cv2.COLOR_GRAY2BGR)
+        if CROP_TO_DEPTH_FOV and state["depth_roi"] is not None:
+            y0, y1, x0, x1 = state["depth_roi"]
+            color_cropped = color_image[y0:y1, x0:x1]
+            depth_cropped = depth_mm[y0:y1, x0:x1]
+        else:
+            color_cropped = color_image
+            depth_cropped = depth_mm
+
+        depth_display = depth_to_preview(depth_cropped)
 
         # Handle countdown -> recording transition
         if state["counting_down"] and not state["recording"]:
@@ -209,13 +249,13 @@ def collect_loop(pipeline, align, colorizer, base, writer, state):
         # Auto-save when recording, throttled by SAVE_INTERVAL_S
         now = time.time()
         if state["recording"] and (now - state["last_save_ts"]) >= SAVE_INTERVAL_S:
-            save_frame(base, writer, state["frame_idx"], color_image, depth_raw)
+            save_frame(base, writer, state["frame_idx"], state["tube_number"], color_cropped, depth_cropped)
             state["frame_idx"]    += 1
             state["saved_count"]  += 1
             state["last_save_ts"]  = now
 
         # Build display — normalised depth alongside colour
-        canvas = np.hstack((color_image, depth_display))
+        canvas = np.hstack((color_cropped, depth_display))
         rec_elapsed = time.time() - state["rec_start_ts"] if state["recording"] else state["rec_elapsed"]
         countdown_remaining = max(0.0, state["countdown_end"] - time.time()) if state["counting_down"] else 0.0
         canvas = draw_hud(canvas, state["recording"], state["counting_down"], countdown_remaining,
@@ -232,7 +272,7 @@ def collect_loop(pipeline, align, colorizer, base, writer, state):
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
             return True
-        elif key == ord(" "):
+        elif key == ord("r"):
             if not state["recording"] and not state["counting_down"]:
                 state["counting_down"] = True
                 state["countdown_end"] = time.time() + RECORD_DELAY_S
@@ -242,8 +282,8 @@ def collect_loop(pipeline, align, colorizer, base, writer, state):
                 state["recording"]     = False
                 state["counting_down"] = False
                 print("[info] PAUSED")
-        elif key == ord("s"):
-            save_frame(base, writer, state["frame_idx"], color_image, depth_raw)
+        elif key == ord(" ") or key == ord("s"):
+            save_frame(base, writer, state["frame_idx"], state["tube_number"], color_cropped, depth_cropped)
             state["frame_idx"]   += 1
             state["saved_count"] += 1
             print(f"[info] Saved frame {state['frame_idx'] - 1}  (total: {state['saved_count']})")
@@ -267,37 +307,32 @@ def get_screen_width() -> int:
 
 def main():
     print("Dataset Collector — RealSense D415")
-    label = input("Session label (e.g. single, pairs, mixed): ").strip()
-    if not label:
-        label = "session"
+    tube_number = input("Tube number (e.g. 1): ").strip()
+    if not tube_number:
+        tube_number = "1"
 
-    base = create_session_dirs(label)
-    csv_file, writer = open_csv(base)
+    base = create_session_dirs(tube_number)
+    csv_file, writer = open_csv(base, tube_number)
     print(f"[info] Session folder: {base}")
-    print("[info] Controls: SPACE=record/pause  S=save single  Q=quit")
+    print("[info] Controls: SPACE/S=save single  R=record/pause  Q=quit")
 
     screen_w  = get_screen_width()
     align     = rs.align(rs.stream.color)
-    colorizer = rs.colorizer()  # kept for potential future use, not used in display
-    spatial   = rs.spatial_filter()
-    spatial.set_option(rs.option.filter_magnitude, 2)
-    spatial.set_option(rs.option.filter_smooth_alpha, 0.5)
-    spatial.set_option(rs.option.filter_smooth_delta, 20)
-
     state = {
-        "frame_idx":        0,
+        "frame_idx":        1,
         "saved_count":      0,
         "live_count":       0,
-        "label":            label,
+        "label":            f"tube_{tube_number}",
+        "tube_number":      tube_number,
         "recording":        False,
         "counting_down":    False,
         "countdown_end":    0.0,
         "last_save_ts":     0.0,
         "rec_start_ts":     0.0,
         "rec_elapsed":      0.0,
+        "depth_roi":        None,
         "session_start_ts": time.time(),
         "screen_w":         screen_w,
-        "spatial":          spatial,
     }
 
     retries = 0
@@ -317,7 +352,7 @@ def main():
         retries = 0
 
         try:
-            done = collect_loop(pipeline, align, colorizer, base, writer, state)
+            done = collect_loop(pipeline, align, base, writer, state)
         finally:
             pipeline.stop()
 
