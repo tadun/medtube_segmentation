@@ -42,8 +42,8 @@ DEVICE      = ""                    # "" = auto (MPS on Apple Silicon, CUDA if a
 
 # Models to compare — keys are display names, values are Ultralytics model IDs
 MODELS = {
-    "YOLOv8-seg":  "yolov8m-seg.pt",
-    "YOLOv9-seg":  "yolov9m-seg.pt",
+    "YOLOv8-seg": "yolov8m-seg.pt",
+    "YOLOv9-seg": "yolov9c-seg.pt",
     "YOLOv11-seg": "yolo11m-seg.pt",
 }
 

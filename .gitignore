@@ -13,5 +13,20 @@ __pycache__/
 # Dataset (large binary files — collect locally)
 dataset/
 
+# Annotation artifacts (local staging/preflight outputs)
+annotation/
+annotations/
+
+# Downloaded Roboflow export
+MedTube Segmentation.yolov8/
+
+# Local training outputs
+runs/
+
+# Local downloaded model weights
+*.pt
+
+# Local external dependency checkout
+librealsense/
 # macOS
 .DS_Store
