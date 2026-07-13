@@ -85,9 +85,9 @@
 
 ## 7. Utility and QA Scripts Added
 
-- `preview_autofilled_labels.py`
+- `tools/preview_autofilled_labels.py`
   - Generates overlays for auto-filled labels to inspect geometric correctness.
-- `view_coco_masks.py`
+- `tools/view_coco_masks.py`
   - Local viewer for COCO segmentation overlays with class names.
 
 ## 8. Git History Milestones (Recent)

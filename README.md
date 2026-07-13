@@ -96,6 +96,20 @@ data/
 
 Export from Roboflow in **YOLOv8 format** — the download unpacks directly into this structure.
 
+______________________________________________________________________
+
+## QA Utilities
+
+Project viewers and inspection helpers live under `tools/` to keep the root focused on the main collection, annotation, and training pipeline.
+
+```bash
+# preview auto-filled YOLO labels
+rs_env/bin/python tools/preview_autofilled_labels.py
+
+# inspect COCO masks with class overlays
+rs_env/bin/python tools/view_coco_masks.py --dataset data_coco --random
+```
+
 Built-in augmentation presets:
 
 - `strong` (default): aggressive transforms for small datasets
@@ -191,6 +205,10 @@ medtube_segmentation/
   collect_dataset.py    Dataset collection
   realsense_stream.py   Live preview
   train_compare.py      YOLO model comparison training
+  kaggle_train.py       Kaggle single-model trainer
+  docs/                 Project notes and report material
+  tools/                QA and visualization utilities
+  annotation/           Staged images + manifest for annotation
   data/                 Annotated dataset — YOLO format  (not committed)
   dataset/              Raw collected frames             (not committed)
   rs_env/               Python virtual environment       (not committed)
