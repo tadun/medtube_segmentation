@@ -102,7 +102,7 @@ Built-in augmentation presets:
 - `mild`: conservative transforms to reduce synthetic shift
 - `none`: disable augmentation for baseline comparison
 
-______________________________________________________________________
+---
 
 ## QA Utilities
 
@@ -116,7 +116,7 @@ rs_env/bin/python tools/preview_autofilled_labels.py
 rs_env/bin/python tools/view_coco_masks.py --dataset data_coco --random
 ```
 
-______________________________________________________________________
+---
 
 ## Kaggle Training (Free GPU)
 
@@ -145,7 +145,7 @@ Notes:
 - Download `best.pt` and `last.pt` from notebook output before session ends.
 - If you need to continue in a new session, upload `last.pt` as a Kaggle Dataset and place it at `/kaggle/working/runs/<name>/weights/last.pt` before running `--resume`.
 
-______________________________________________________________________
+---
 
 ## Local Long-Run Resume (macOS)
 
@@ -168,7 +168,7 @@ LOG="runs/overnight_logs/train_compare_${TS}.log"
 caffeinate -dimsu rs_env/bin/python train_compare.py --data "/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)/data.yaml" --aug-preset mild 2>&1 | tee "$LOG"
 ```
 
-______________________________________________________________________
+---
 
 ## Depth Experiment Plan
 
