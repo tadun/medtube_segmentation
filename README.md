@@ -96,6 +96,12 @@ data/
 
 Export from Roboflow in **YOLOv8 format** — the download unpacks directly into this structure.
 
+Built-in augmentation presets:
+
+- `strong` (default): aggressive transforms for small datasets
+- `mild`: conservative transforms to reduce synthetic shift
+- `none`: disable augmentation for baseline comparison
+
 ______________________________________________________________________
 
 ## QA Utilities
@@ -109,12 +115,6 @@ rs_env/bin/python tools/preview_autofilled_labels.py
 # inspect COCO masks with class overlays
 rs_env/bin/python tools/view_coco_masks.py --dataset data_coco --random
 ```
-
-Built-in augmentation presets:
-
-- `strong` (default): aggressive transforms for small datasets
-- `mild`: conservative transforms to reduce synthetic shift
-- `none`: disable augmentation for baseline comparison
 
 ______________________________________________________________________
 
