@@ -147,3 +147,53 @@
   - run depth-only baseline,
   - then run RGB-D fusion,
   - compare mAP and class-wise failure modes.
+
+## 13. Session Update (2026-07-14)
+
+### 13.1 Training status
+
+- YOLOv8-seg training is actively running (resumed from `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/last.pt`).
+- Current working weights for live inference: `weights.pt` (project root symlink/copy).
+- When training completes, swap `weights.pt` → new `best.pt` to update the live stream.
+
+### 13.2 Live stream overhaul (`realsense_stream.py`)
+
+Complete rewrite of the stream script into a production-ready YOLO segmentation viewer:
+
+**Display**
+- 2×2 grid window ("MedTube Segmentation Stream") auto-sized to fit the screen.
+- TL: raw RGB stream, TR: depth heatmap (auto-ranged TURBO), BL: stream + YOLO masks, BR: depth + YOLO masks.
+- Class-coloured masks matching data.yaml class order: Universal=red, Screwcap=green, Push-on=blue, Other=yellow.
+- Panel labels drawn with `FONT_HERSHEY_DUPLEX` on semi-transparent dark backgrounds.
+- HUD bar shows live/rec status, elapsed time, snapshot count, and full-text controls.
+
+**Capture**
+- Space saves a 4-view snapshot set to `runs/captures/snapshots/`.
+- R starts/stops continuous recording to `runs/captures/rec_<timestamp>/` at 0.5 s intervals.
+
+**Camera/depth handling**
+- 180° flip applied at source (camera is mounted upside-down).
+- 4 s auto-exposure warmup after pipeline start.
+- Depth ROI locked on first stable frame to remove IR parallax zone.
+- Depth post-processing: spatial filter → temporal filter → hole-filling filter.
+- Depth+Masks panel uses scene-calibrated 435–535 mm range (matches collect_dataset.py).
+- Heatmap panel uses per-frame auto-range for full depth scene visibility.
+- Mask alignment uses `masks.xy` polygon rasterization (no interpolation offset).
+
+### 13.3 Passwordless launcher (`run_rs.sh`)
+
+- One-time setup creates `/usr/local/bin/rs-stream-medtube` and a scoped NOPASSWD sudoers rule.
+- After setup: `./run_rs.sh` launches the stream without a password prompt.
+- Scoped to the specific binary only — minimal security exposure.
+
+### 13.4 macOS USB access root cause
+
+- macOS CoreMediaIO / VDCAssistant claims the camera USB interface, blocking librealsense.
+- Google Meet / video calls in particular hold the interface.
+- Solution: run via `sudo` (handled by `run_rs.sh`).
+- Camera connected through a USB 3.1 GenesysLogic hub — works reliably after sudo.
+
+### 13.5 Current known issues
+
+- Screwcap / Push-on confusion occurs occasionally — a model accuracy issue expected to improve once the current training run completes.
+- Dark matte surface absorbs IR — depth heatmap has scattered black holes on that surface type; spatial/temporal/hole-filling filters reduce but do not eliminate this.

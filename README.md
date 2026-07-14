@@ -12,8 +12,9 @@ Dataset collection and instance segmentation pipeline for medical tubes using an
 | Connection         | USB 3.2                  |
 | Capture resolution | 1280 × 720 @ 30 fps      |
 
-> **macOS note:** `pyrealsense2` requires elevated privileges to claim the USB interface.
-> Always prefix RealSense scripts with `sudo rs_env/bin/python`.
+> **macOS note:** `pyrealsense2` requires elevated privileges to claim the USB interface on macOS.
+> Run `./run_rs.sh` (see below) which handles sudo automatically after a one-time setup.
+> You can also prefix any RealSense script manually with `sudo rs_env/bin/python`.
 
 ---
 
@@ -63,17 +64,82 @@ Raw 16-bit depth values are preserved in saved files.
 
 ---
 
-### `realsense_stream.py` — Live preview
+### `run_rs.sh` — Passwordless RealSense launcher
 
-Minimal streaming script for verifying the camera feed.
+Runs the live stream without a password prompt on every launch.
+
+**One-time setup** (required once per machine):
 
 ```bash
-sudo rs_env/bin/python realsense_stream.py
+# Create a symlink and add a sudoers rule scoped to this binary only
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cat > /tmp/rs-stream-medtube << 'EOF'
+#!/bin/bash
+PROJ="/Users/tadun/Documents/2026/Final Project/medtube_segmentation"
+exec "$PROJ/rs_env/bin/python" "$PROJ/realsense_stream.py" "$@"
+EOF
+sudo install -m 755 /tmp/rs-stream-medtube /usr/local/bin/rs-stream-medtube
+echo "$(whoami) ALL=(ALL) NOPASSWD: /usr/local/bin/rs-stream-medtube" \
+    | sudo tee /etc/sudoers.d/realsense
+sudo chmod 440 /etc/sudoers.d/realsense
+```
+
+After setup, launch the stream with:
+
+```bash
+./run_rs.sh
 ```
 
 ---
 
-### `train_compare.py` — Model comparison
+### `realsense_stream.py` — Live YOLO segmentation stream
+
+Real-time instance segmentation overlay on live D415 colour + depth frames.
+Displays a 2×2 grid window: **RGB** | **Depth Heatmap** (top), **Stream + Masks** | **Depth + Masks** (bottom).
+
+```bash
+./run_rs.sh          # recommended — no password prompt after one-time setup
+# or
+sudo rs_env/bin/python realsense_stream.py
+```
+
+**Class colour coding**
+
+| Class     | Colour  |
+|-----------|---------|
+| Universal | Red     |
+| Screwcap  | Green   |
+| Push-on   | Blue    |
+| Other     | Yellow  |
+
+**Controls**
+
+| Key     | Action                          |
+|---------|---------------------------------|
+| `Space` | Save snapshot (all 4 views)     |
+| `R`     | Start / stop recording          |
+| `Q`     | Quit                            |
+
+**Depth panels**
+
+- *Depth Heatmap* (TR): TURBO colourmap auto-ranged to valid depth per frame.
+- *Depth + Masks* (BR): TURBO colourmap using the same scene-calibrated range as `collect_dataset.py` (435–535 mm default).
+
+**Saves** go to `runs/captures/`:
+
+```text
+runs/captures/
+  snapshots/              ← Space key  (stream, overlay, depth, heat — 4 PNGs per snap)
+  rec_YYYYMMDD_HHMMSS/    ← R key      (same 4 views per frame, every 0.5 s)
+```
+
+**Camera setup**
+
+- Camera is mounted upside-down; the stream applies a 180° flip automatically.
+- Recommended height above scene: 600–800 mm for best depth accuracy and minimal IR parallax.
+- Depth ROI is auto-detected on the first stable frame to remove the IR parallax blind zone.
+
+
 
 Trains YOLOv8-seg, YOLOv9-seg and YOLOv11-seg on the same dataset with identical augmentation settings and prints a side-by-side mAP summary.
 

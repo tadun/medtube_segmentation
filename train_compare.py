@@ -7,28 +7,37 @@ same augmentation settings, then prints a side-by-side mAP summary.
 Usage
 -----
 1. Annotate your images with instance segmentation masks (Roboflow, CVAT, or
-   Label Studio) and export in YOLO segmentation format.
+    Label Studio) and export in YOLO segmentation format.
 2. Place or symlink your dataset under data/  with this structure:
-       data/
-         dataset.yaml
-         train/
-           images/
-           labels/
-         val/
-           images/
-           labels/
+         data/
+            dataset.yaml
+            train/
+              images/
+              labels/
+            val/
+              images/
+              labels/
 3. Run:
-       rs_env/bin/python train_compare.py
-   (no sudo needed — training does not use the RealSense camera)
+         rs_env/bin/python train_compare.py
+    (no sudo needed — training does not use the RealSense camera)
 
 Install dependencies first:
-   rs_env/bin/pip install ultralytics torch torchvision
+    rs_env/bin/pip install ultralytics torch torchvision
 """
 
-from ultralytics import YOLO
 import json
-from pathlib import Path
+import os
 from datetime import datetime
+from pathlib import Path
+
+_ULTRALYTICS_CONFIG_DIR = Path(__file__).resolve().parent / ".ultralytics"
+_ULTRALYTICS_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+_MPL_CONFIG_DIR = Path(__file__).resolve().parent / ".matplotlib"
+_MPL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("YOLO_CONFIG_DIR", str(_ULTRALYTICS_CONFIG_DIR))
+os.environ.setdefault("MPLCONFIGDIR", str(_MPL_CONFIG_DIR))
+
+from ultralytics import YOLO
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
