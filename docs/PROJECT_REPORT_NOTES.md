@@ -375,3 +375,36 @@ The local YOLO11m run (`2026-07-12_22-07-43`) was interrupted before saving any 
 | YOLO11n test-split plots | `runs/segment/runs/test_results/YOLO11n-best-test/` |
 | YOLOv8m weights | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt` |
 | YOLOv8m test-split plots | `runs/segment/runs/test_results/YOLOv8-best-test/` |
+
+## 16. Roboflow Cloud-Trained Models (2026-07-14)
+
+### 16.1 Decision
+
+Two additional models trained via Roboflow cloud (GPU) to broaden the comparison:
+1. **YOLOv8n-seg** — nano-tier v8 baseline; also provides a size-comparison data point within the v8 family
+2. **RF-DETR (Small)** — transformer-based instance segmentation; architecturally distinct from the YOLO family
+
+### 16.2 Training Configuration
+
+| Setting | YOLOv8n-seg | RF-DETR-S |
+|---|---|---|
+| Platform | Roboflow cloud (GPU) | Roboflow cloud (GPU) |
+| Input resolution | 640×640 | **384×384** (RF-DETR recommended) |
+| Dataset | Same Roboflow export | Same Roboflow export |
+| Architecture type | CNN + NMS | Transformer, NMS-free |
+
+Note: RF-DETR uses 384×384 because that is its recommended optimum (Roboflow guidance). All YOLO runs use 640×640.
+
+### 16.3 Reporting Considerations
+
+- **Hardware difference**: Roboflow GPU ≠ local M1 Max CPU — inference speed cannot be directly compared to local YOLO benchmarks.
+- **Input resolution difference** for RF-DETR (384 vs 640) must be disclosed in the comparison table.
+- Present cloud-trained results in clearly labelled rows, e.g. `YOLOv8n-seg (640², cloud)` and `RF-DETR-S (384², cloud)`.
+- Accuracy metrics (mAP) are still comparable since they are evaluated on the same test split regardless of training hardware.
+
+### 16.4 Results (fill in once training completes)
+
+| Model | Train platform | imgsz | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 |
+|---|---|---|---|---|---|---|
+| YOLOv8n-seg | Roboflow cloud | 640 | — | — | — | — |
+| RF-DETR-S | Roboflow cloud | 384 | — | — | — | — |
