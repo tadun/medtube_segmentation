@@ -313,15 +313,10 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
     depth_roi:   tuple | None = None
     depth_range: tuple | None = None   # (d_min_mm, d_max_mm) auto-estimated from scene
 
-    WIN = "MedTube Segmentation Stream"
+    WIN = "MedTube D415  |  TL: RGB   TR: Depth   BL: Masks   BR: Depth+Masks"
     cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WIN, 1512, 858)   # width auto-corrected after first frame
+    cv2.resizeWindow(WIN, 1100, 858)   # fixed — content auto-scales inside
     window_sized = False
-
-    # Depth post-processing filters
-    spatial_filter   = rs.spatial_filter()
-    temporal_filter  = rs.temporal_filter()
-    hole_fill_filter = rs.hole_filling_filter()
 
     while True:
         try:
@@ -335,11 +330,6 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
         depth_frame = aligned.get_depth_frame()
         if not color_frame or not depth_frame:
             continue
-
-        # Depth post-processing to reduce black holes
-        depth_frame = spatial_filter.process(depth_frame)
-        depth_frame = temporal_filter.process(depth_frame)
-        depth_frame = hole_fill_filter.process(depth_frame)
 
         color_image = np.asanyarray(color_frame.get_data())
         depth_mm    = np.asanyarray(depth_frame.get_data())
@@ -411,10 +401,11 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
 
         cv2.imshow(WIN, grid)
 
-        # Auto-size window width to eliminate black bars after first frame
+        # Auto-size window width, capped to avoid going off-screen
         if not window_sized:
             gh, gw = grid.shape[:2]
-            cv2.resizeWindow(WIN, int(gw * 858 / gh), 858)
+            win_w = min(int(gw * 858 / gh), 1100)
+            cv2.resizeWindow(WIN, win_w, 858)
             window_sized = True
 
         key = cv2.waitKey(1) & 0xFF
