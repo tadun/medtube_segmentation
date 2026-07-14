@@ -28,5 +28,11 @@ runs/
 
 # Local external dependency checkout
 librealsense/
+
+# Ultralytics / matplotlib runtime caches
+.ultralytics/
+.matplotlib/
+Ultralytics/
+
 # macOS
 .DS_Store
