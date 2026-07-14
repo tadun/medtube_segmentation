@@ -30,9 +30,9 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-_ULTRALYTICS_CONFIG_DIR = Path(__file__).resolve().parent / ".ultralytics"
+_ULTRALYTICS_CONFIG_DIR = Path(__file__).resolve().parent.parent / ".ultralytics"
 _ULTRALYTICS_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-_MPL_CONFIG_DIR = Path(__file__).resolve().parent / ".matplotlib"
+_MPL_CONFIG_DIR = Path(__file__).resolve().parent.parent / ".matplotlib"
 _MPL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("YOLO_CONFIG_DIR", str(_ULTRALYTICS_CONFIG_DIR))
 os.environ.setdefault("MPLCONFIGDIR", str(_MPL_CONFIG_DIR))

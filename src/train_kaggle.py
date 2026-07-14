@@ -1,7 +1,7 @@
 """Minimal Kaggle training entrypoint with checkpoint resume support.
 
 Usage on Kaggle Notebook:
-  python train_kaggle.py --data /kaggle/input/<dataset>/data.yaml --model yolo11m-seg.pt
+  python src/train_kaggle.py --data /kaggle/input/<dataset>/data.yaml --model yolo11m-seg.pt
 """
 
 from __future__ import annotations
@@ -10,9 +10,9 @@ import argparse
 import os
 from pathlib import Path
 
-_ULTRALYTICS_CONFIG_DIR = Path(__file__).resolve().parent / ".ultralytics"
+_ULTRALYTICS_CONFIG_DIR = Path(__file__).resolve().parent.parent / ".ultralytics"
 _ULTRALYTICS_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-_MPL_CONFIG_DIR = Path(__file__).resolve().parent / ".matplotlib"
+_MPL_CONFIG_DIR = Path(__file__).resolve().parent.parent / ".matplotlib"
 _MPL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("YOLO_CONFIG_DIR", str(_ULTRALYTICS_CONFIG_DIR))
 os.environ.setdefault("MPLCONFIGDIR", str(_MPL_CONFIG_DIR))

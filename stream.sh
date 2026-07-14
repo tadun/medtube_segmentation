@@ -21,7 +21,7 @@ if [ ! -f "$LAUNCHER" ]; then
     echo "  cat > /tmp/rs-stream-medtube << 'WEOF'"
     echo "  #!/bin/bash"
     echo "  PROJ=\"$SCRIPT_DIR\""
-    echo "  exec \"\$PROJ/rs_env/bin/python\" \"\$PROJ/realsense_stream.py\" \"\$@\""
+    echo "  exec \"\$PROJ/rs_env/bin/python\" \"\$PROJ/src/realsense_stream.py\" \"\$@\""
     echo "  WEOF"
     echo "  sudo install -m 755 /tmp/rs-stream-medtube $LAUNCHER"
     echo "  echo \"$(whoami) ALL=(ALL) NOPASSWD: $LAUNCHER\" | sudo tee /etc/sudoers.d/realsense"

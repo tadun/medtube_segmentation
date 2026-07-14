@@ -64,7 +64,7 @@
 
 ## 6. Training Pipeline Status
 
-- Comparison script: `train_compare.py`.
+- Comparison script: `src/train_compare.py`.
 - Models configured:
   - YOLOv8-seg: yolov8m-seg.pt
   - YOLOv9-seg: updated to yolov9c-seg.pt (valid checkpoint)
@@ -117,7 +117,7 @@
 
 - Verify `data.yaml` path exists and points to cleaned dataset.
 - Run a 1-epoch smoke test first.
-- Run full `train_compare.py` on same split and preset.
+- Run full `src/train_compare.py` on same split and preset.
 - Archive `runs/` output and `comparison.json` for report appendix.
 
 ## 12. Session Update (2026-07-13)
@@ -156,7 +156,7 @@
 - Current working weights for live inference: `weights.pt` (project root symlink/copy).
 - When training completes, swap `weights.pt` → new `best.pt` to update the live stream.
 
-### 13.2 Live stream overhaul (`realsense_stream.py`)
+### 13.2 Live stream overhaul (`src/realsense_stream.py`)
 
 Complete rewrite of the stream script into a production-ready YOLO segmentation viewer:
 
@@ -179,7 +179,7 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 - 4 s auto-exposure warmup after pipeline start.
 - Depth ROI locked on first stable frame to remove IR parallax zone.
 - Depth post-processing: spatial filter → temporal filter → hole-filling filter.
-- Depth+Masks panel uses scene-calibrated 435–535 mm range (matches capture_dataset.py).
+- Depth+Masks panel uses scene-calibrated 435–535 mm range (matches src/capture_dataset.py).
 - Heatmap panel uses per-frame auto-range for full depth scene visibility.
 - Mask alignment uses `masks.xy` polygon rasterization (no interpolation offset).
 
@@ -314,7 +314,7 @@ auto_augment: randaugment
 ### 14.5 Live Stream — Testing with best.pt
 
 - `weights.pt` (repo root, 5.8 MB) is a different/older model — **not** the newly trained weights.
-- `FALLBACK_WEIGHTS` in `realsense_stream.py` already points to `best.pt` automatically if `weights.pt` is absent.
+- `FALLBACK_WEIGHTS` in `src/realsense_stream.py` already points to `best.pt` automatically if `weights.pt` is absent.
 - To run stream explicitly with new weights:
 
   ```bash

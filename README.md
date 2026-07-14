@@ -33,12 +33,12 @@ pip install pyrealsense2 opencv-python numpy ultralytics roboflow
 
 ## Scripts
 
-### `capture_dataset.py` — Data collection
+### `src/capture_dataset.py` — Data collection
 
 Streams aligned RGB and depth from the D415 and saves paired frames to disk.
 
 ```bash
-sudo rs_env/bin/python capture_dataset.py
+sudo rs_env/bin/python src/capture_dataset.py
 ```
 
 Prompts for a session label on startup (e.g. `single`, `pairs`, `mixed`).
@@ -76,7 +76,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cat > /tmp/rs-stream-medtube << 'EOF'
 #!/bin/bash
 PROJ="/Users/tadun/Documents/2026/Final Project/medtube_segmentation"
-exec "$PROJ/rs_env/bin/python" "$PROJ/realsense_stream.py" "$@"
+exec "$PROJ/rs_env/bin/python" "$PROJ/src/realsense_stream.py" "$@"
 EOF
 sudo install -m 755 /tmp/rs-stream-medtube /usr/local/bin/rs-stream-medtube
 echo "$(whoami) ALL=(ALL) NOPASSWD: /usr/local/bin/rs-stream-medtube" \
@@ -92,7 +92,7 @@ After setup, launch the stream with:
 
 ---
 
-### `realsense_stream.py` — Live YOLO segmentation stream
+### `src/realsense_stream.py` — Live YOLO segmentation stream
 
 Real-time instance segmentation overlay on live D415 colour + depth frames.
 Displays a 2×2 grid window: **RGB** | **Depth Heatmap** (top), **Stream + Masks** | **Depth + Masks** (bottom).
@@ -100,7 +100,7 @@ Displays a 2×2 grid window: **RGB** | **Depth Heatmap** (top), **Stream + Masks
 ```bash
 ./stream.sh          # recommended — no password prompt after one-time setup
 # or
-sudo rs_env/bin/python realsense_stream.py
+sudo rs_env/bin/python src/realsense_stream.py
 ```
 
 #### Class colour coding
@@ -123,7 +123,7 @@ sudo rs_env/bin/python realsense_stream.py
 #### Depth panels
 
 - *Depth Heatmap* (TR): TURBO colourmap auto-ranged to valid depth per frame.
-- *Depth + Masks* (BR): TURBO colourmap using the same scene-calibrated range as `capture_dataset.py` (435–535 mm default).
+- *Depth + Masks* (BR): TURBO colourmap using the same scene-calibrated range as `src/capture_dataset.py` (435–535 mm default).
 
 **Saves** go to `runs/captures/`:
 
@@ -142,7 +142,7 @@ runs/captures/
 Trains YOLOv8-seg, YOLOv9-seg and YOLOv11-seg on the same dataset with identical augmentation settings and prints a side-by-side mAP summary.
 
 ```bash
-rs_env/bin/python train_compare.py
+rs_env/bin/python src/train_compare.py
 ```
 
 Expects the dataset in YOLO segmentation format under `data/`:
@@ -187,7 +187,7 @@ rs_env/bin/python tools/view_masks.py --dataset data_coco --random
 For long runs on free Kaggle sessions, use the single-model trainer with checkpoint resume:
 
 ```bash
-python train_kaggle.py \
+python src/train_kaggle.py \
   --data /kaggle/input/<your-dataset>/data.yaml \
   --model yolo11m-seg.pt \
   --name medtube-yolo11 \
@@ -197,7 +197,7 @@ python train_kaggle.py \
 Resume after a Kaggle disconnect or session timeout:
 
 ```bash
-python train_kaggle.py \
+python src/train_kaggle.py \
   --data /kaggle/input/<your-dataset>/data.yaml \
   --name medtube-yolo11 \
   --resume
@@ -229,7 +229,7 @@ Tip for long local runs:
 mkdir -p runs/overnight_logs
 TS=$(date +%Y%m%d_%H%M%S)
 LOG="runs/overnight_logs/train_compare_${TS}.log"
-caffeinate -dimsu rs_env/bin/python train_compare.py --data "/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)/data.yaml" --aug-preset mild 2>&1 | tee "$LOG"
+caffeinate -dimsu rs_env/bin/python src/train_compare.py --data "/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)/data.yaml" --aug-preset mild 2>&1 | tee "$LOG"
 ```
 
 ---
@@ -266,10 +266,12 @@ runs/
 
 ```text
 medtube_segmentation/
-  capture_dataset.py    Dataset collection
-  realsense_stream.py   Live preview
-  train_compare.py      YOLO model comparison training
-  train_kaggle.py       Kaggle single-model trainer
+  stream.sh             RealSense launcher
+  src/
+    capture_dataset.py  Dataset collection
+    realsense_stream.py Live preview
+    train_compare.py    YOLO model comparison training
+    train_kaggle.py     Kaggle single-model trainer
   docs/                 Project notes and report material
   tools/                QA and visualization utilities
   annotation/           Staged images + manifest for annotation
