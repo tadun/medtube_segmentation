@@ -1,13 +1,13 @@
 """View COCO segmentation masks with class overlays.
 
 Usage examples:
-    rs_env/bin/python tools/view_coco_masks.py \
+    rs_env/bin/python tools/view_masks.py \
       --dataset data_coco \
       --annotations _annotations.coco.json \
       --random \
       --save overlays
 
-    rs_env/bin/python tools/view_coco_masks.py \
+    rs_env/bin/python tools/view_masks.py \
       --dataset data_coco \
       --annotations _annotations.coco.json \
       --image-file train/images/example.jpg

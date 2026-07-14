@@ -15,7 +15,7 @@ os.environ.setdefault("MPLCONFIGDIR", str(_MPL_CONFIG_DIR))
 
 from ultralytics import YOLO  # noqa: E402
 
-# --- Stream configuration (USB 3 — matches collect_dataset.py) ---
+# --- Stream configuration (USB 3 — matches capture_dataset.py) ---
 COLOR_WIDTH  = 1280
 COLOR_HEIGHT = 720
 COLOR_FPS    = 30

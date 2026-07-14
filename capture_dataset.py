@@ -17,7 +17,7 @@ Output structure
             tube_<number>.csv timestamp, frame index per saved frame
 
 Run with:
-  sudo rs_env/bin/python collect_dataset.py
+  sudo rs_env/bin/python capture_dataset.py
 """
 
 import pyrealsense2 as rs

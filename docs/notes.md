@@ -85,9 +85,9 @@
 
 ## 7. Utility and QA Scripts Added
 
-- `tools/preview_autofilled_labels.py`
+- `tools/preview_labels.py`
   - Generates overlays for auto-filled labels to inspect geometric correctness.
-- `tools/view_coco_masks.py`
+- `tools/view_masks.py`
   - Local viewer for COCO segmentation overlays with class names.
 
 ## 8. Git History Milestones (Recent)
@@ -179,21 +179,21 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 - 4 s auto-exposure warmup after pipeline start.
 - Depth ROI locked on first stable frame to remove IR parallax zone.
 - Depth post-processing: spatial filter → temporal filter → hole-filling filter.
-- Depth+Masks panel uses scene-calibrated 435–535 mm range (matches collect_dataset.py).
+- Depth+Masks panel uses scene-calibrated 435–535 mm range (matches capture_dataset.py).
 - Heatmap panel uses per-frame auto-range for full depth scene visibility.
 - Mask alignment uses `masks.xy` polygon rasterization (no interpolation offset).
 
-### 13.3 Passwordless launcher (`run_rs.sh`)
+### 13.3 Passwordless launcher (`stream.sh`)
 
 - One-time setup creates `/usr/local/bin/rs-stream-medtube` and a scoped NOPASSWD sudoers rule.
-- After setup: `./run_rs.sh` launches the stream without a password prompt.
+- After setup: `./stream.sh` launches the stream without a password prompt.
 - Scoped to the specific binary only — minimal security exposure.
 
 ### 13.4 macOS USB access root cause
 
 - macOS CoreMediaIO / VDCAssistant claims the camera USB interface, blocking librealsense.
 - Google Meet / video calls in particular hold the interface.
-- Solution: run via `sudo` (handled by `run_rs.sh`).
+- Solution: run via `sudo` (handled by `stream.sh`).
 - Camera connected through a USB 3.1 GenesysLogic hub — works reliably after sudo.
 
 ### 13.5 Current known issues
@@ -318,7 +318,7 @@ auto_augment: randaugment
 - To run stream explicitly with new weights:
 
   ```bash
-  ./run_rs.sh --weights runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt
+  ./stream.sh --weights runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt
   ```
 
 - To make `best.pt` the permanent default, copy it to `weights.pt`:

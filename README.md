@@ -13,7 +13,7 @@ Dataset collection and instance segmentation pipeline for medical tubes using an
 | Capture resolution | 1280 × 720 @ 30 fps      |
 
 > **macOS note:** `pyrealsense2` requires elevated privileges to claim the USB interface on macOS.
-> Run `./run_rs.sh` (see below) which handles sudo automatically after a one-time setup.
+> Run `./stream.sh` (see below) which handles sudo automatically after a one-time setup.
 > You can also prefix any RealSense script manually with `sudo rs_env/bin/python`.
 
 ---
@@ -33,12 +33,12 @@ pip install pyrealsense2 opencv-python numpy ultralytics roboflow
 
 ## Scripts
 
-### `collect_dataset.py` — Data collection
+### `capture_dataset.py` — Data collection
 
 Streams aligned RGB and depth from the D415 and saves paired frames to disk.
 
 ```bash
-sudo rs_env/bin/python collect_dataset.py
+sudo rs_env/bin/python capture_dataset.py
 ```
 
 Prompts for a session label on startup (e.g. `single`, `pairs`, `mixed`).
@@ -64,7 +64,7 @@ Raw 16-bit depth values are preserved in saved files.
 
 ---
 
-### `run_rs.sh` — Passwordless RealSense launcher
+### `stream.sh` — Passwordless RealSense launcher
 
 Runs the live stream without a password prompt on every launch.
 
@@ -87,7 +87,7 @@ sudo chmod 440 /etc/sudoers.d/realsense
 After setup, launch the stream with:
 
 ```bash
-./run_rs.sh
+./stream.sh
 ```
 
 ---
@@ -98,7 +98,7 @@ Real-time instance segmentation overlay on live D415 colour + depth frames.
 Displays a 2×2 grid window: **RGB** | **Depth Heatmap** (top), **Stream + Masks** | **Depth + Masks** (bottom).
 
 ```bash
-./run_rs.sh          # recommended — no password prompt after one-time setup
+./stream.sh          # recommended — no password prompt after one-time setup
 # or
 sudo rs_env/bin/python realsense_stream.py
 ```
@@ -123,7 +123,7 @@ sudo rs_env/bin/python realsense_stream.py
 #### Depth panels
 
 - *Depth Heatmap* (TR): TURBO colourmap auto-ranged to valid depth per frame.
-- *Depth + Masks* (BR): TURBO colourmap using the same scene-calibrated range as `collect_dataset.py` (435–535 mm default).
+- *Depth + Masks* (BR): TURBO colourmap using the same scene-calibrated range as `capture_dataset.py` (435–535 mm default).
 
 **Saves** go to `runs/captures/`:
 
@@ -174,10 +174,10 @@ Project viewers and inspection helpers live under `tools/` to keep the root focu
 
 ```bash
 # preview auto-filled YOLO labels
-rs_env/bin/python tools/preview_autofilled_labels.py
+rs_env/bin/python tools/preview_labels.py
 
 # inspect COCO masks with class overlays
-rs_env/bin/python tools/view_coco_masks.py --dataset data_coco --random
+rs_env/bin/python tools/view_masks.py --dataset data_coco --random
 ```
 
 ---
@@ -187,7 +187,7 @@ rs_env/bin/python tools/view_coco_masks.py --dataset data_coco --random
 For long runs on free Kaggle sessions, use the single-model trainer with checkpoint resume:
 
 ```bash
-python kaggle_train.py \
+python train_kaggle.py \
   --data /kaggle/input/<your-dataset>/data.yaml \
   --model yolo11m-seg.pt \
   --name medtube-yolo11 \
@@ -197,7 +197,7 @@ python kaggle_train.py \
 Resume after a Kaggle disconnect or session timeout:
 
 ```bash
-python kaggle_train.py \
+python train_kaggle.py \
   --data /kaggle/input/<your-dataset>/data.yaml \
   --name medtube-yolo11 \
   --resume
@@ -266,10 +266,10 @@ runs/
 
 ```text
 medtube_segmentation/
-  collect_dataset.py    Dataset collection
+  capture_dataset.py    Dataset collection
   realsense_stream.py   Live preview
   train_compare.py      YOLO model comparison training
-  kaggle_train.py       Kaggle single-model trainer
+  train_kaggle.py       Kaggle single-model trainer
   docs/                 Project notes and report material
   tools/                QA and visualization utilities
   annotation/           Staged images + manifest for annotation

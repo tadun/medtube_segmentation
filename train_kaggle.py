@@ -1,7 +1,7 @@
 """Minimal Kaggle training entrypoint with checkpoint resume support.
 
 Usage on Kaggle Notebook:
-  python kaggle_train.py --data /kaggle/input/<dataset>/data.yaml --model yolo11m-seg.pt
+  python train_kaggle.py --data /kaggle/input/<dataset>/data.yaml --model yolo11m-seg.pt
 """
 
 from __future__ import annotations
