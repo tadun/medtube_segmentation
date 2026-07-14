@@ -315,7 +315,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
 
     WIN = "MedTube D415  |  TL: RGB   TR: Depth   BL: Masks   BR: Depth+Masks"
     cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WIN, 1100, 700)
+    cv2.resizeWindow(WIN, 1350, 730)
+    cv2.moveWindow(WIN, 0, 30)
 
     while True:
         try:

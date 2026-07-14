@@ -197,3 +197,181 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 
 - Screwcap / Push-on confusion occurs occasionally — a model accuracy issue expected to improve once the current training run completes.
 - Dark matte surface absorbs IR — depth heatmap has scattered black holes on that surface type; spatial/temporal/hole-filling filters reduce but do not eliminate this.
+
+## 14. Session Update (2026-07-14 — Training Complete)
+
+### 14.1 YOLOv8m-seg Full Run — Training Summary
+
+- Run ID: `2026-07-12_22-48-54`
+- Weights directory: `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/`
+- Total epochs: **100** (completed; no early stop — patience=20 not triggered)
+- Training device: Apple M1 Max CPU (MPS was not used due to Ultralytics CPU-fallback)
+- Base model: `yolov8m-seg.pt` (pretrained COCO)
+- Dataset: `/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)/data.yaml`
+  - train: 2097 images, valid: 450 images, test: 449 images
+- Batch size: 8, imgsz: 640
+
+**Best checkpoint: epoch 85** (saved as `best.pt`, selected by Mask mAP50-95)
+
+| Metric | Value |
+|---|---|
+| Box Precision | 0.9961 |
+| Box Recall | 0.9981 |
+| Box mAP50 | 0.9941 |
+| Box mAP50-95 | 0.9730 |
+| Mask Precision | 0.9961 |
+| Mask Recall | 0.9981 |
+| Mask mAP50 | 0.9941 |
+| Mask mAP50-95 | **0.9107** |
+
+**Final epoch (100) — validation split:**
+
+| Metric | Value |
+|---|---|
+| Box mAP50 | 0.9941 |
+| Box mAP50-95 | 0.9763 |
+| Mask mAP50 | 0.9941 |
+| Mask mAP50-95 | 0.9077 |
+
+### 14.2 Test-Split Evaluation (best.pt on held-out test set)
+
+- Evaluated with `model.val(split='test', imgsz=640, batch=8, device='cpu')`
+- Results saved to: `runs/segment/runs/test_results/YOLOv8-best-test/`
+- 449 images, 0 backgrounds, 0 corrupt
+
+**Per-class results (test split):**
+
+| Class | Images | Box P | Box R | Box mAP50 | Box mAP50-95 | Mask P | Mask R | Mask mAP50 | Mask mAP50-95 |
+|---|---|---|---|---|---|---|---|---|---|
+| **all** | 449 | 0.990 | 0.991 | 0.985 | 0.968 | 0.991 | 0.993 | 0.985 | 0.806 |
+| Other | 144 | 0.996 | 0.993 | 0.995 | 0.957 | 1.000 | 1.000 | 0.995 | 0.748 |
+| Push-on | 131 | 0.999 | 0.992 | 0.995 | 0.978 | 0.999 | 0.992 | 0.995 | 0.791 |
+| Screwcap | 97 | 0.969 | 0.979 | 0.954 | 0.945 | 0.968 | 0.979 | 0.954 | 0.798 |
+| Universal | 77 | 0.996 | 1.000 | 0.995 | 0.993 | 0.995 | 1.000 | 0.995 | 0.887 |
+
+**Observations:**
+- Screwcap is the hardest class (lowest mAP50-95 at 0.945 box / 0.798 mask) — consistent with live-stream confusion noted in §13.5.
+- Universal achieves perfect recall (1.0) and highest mask mAP50-95 (0.887).
+- The gap between mAP50 (~0.985) and mAP50-95 (~0.806) for masks suggests the model localises tubes well but mask tightness degrades at higher IoU thresholds — likely due to annotation polygon coarseness rather than model failure.
+
+### 14.3 Training Hyperparameters (full, for reproducibility)
+
+```yaml
+model: yolov8m-seg.pt (pretrained COCO, then resumed from last.pt)
+epochs: 100
+batch: 8
+imgsz: 640
+optimizer: auto  # resolved to AdamW
+lr0: 0.01
+lrf: 0.01        # cosine LR final factor
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 3.0
+warmup_momentum: 0.8
+warmup_bias_lr: 0.0
+box: 7.5
+cls: 0.5
+dfl: 1.5
+amp: true
+close_mosaic: 10
+overlap_mask: true
+mask_ratio: 4
+dropout: 0.0
+patience: 20
+# Augmentation
+hsv_h: 0.01
+hsv_s: 0.4
+hsv_v: 0.2
+degrees: 20.0
+translate: 0.05
+scale: 0.25
+shear: 2.0
+perspective: 0.0001
+flipud: 0.0
+fliplr: 0.5
+mosaic: 0.2
+erasing: 0.2
+auto_augment: randaugment
+```
+
+### 14.4 Key Artefact Paths
+
+| Artefact | Path |
+|---|---|
+| Best weights | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt` |
+| Last weights | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/last.pt` |
+| Training metrics CSV | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/results.csv` |
+| Training args | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/args.yaml` |
+| Test-split predictions JSON | `runs/segment/runs/test_results/YOLOv8-best-test/predictions.json` |
+| Test-split plots | `runs/segment/runs/test_results/YOLOv8-best-test/` |
+| Training curve plots | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/results.png` |
+| Confusion matrix | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/confusion_matrix_normalized.png` |
+
+### 14.5 Live Stream — Testing with best.pt
+
+- `weights.pt` (repo root, 5.8 MB) is a different/older model — **not** the newly trained weights.
+- `FALLBACK_WEIGHTS` in `realsense_stream.py` already points to `best.pt` automatically if `weights.pt` is absent.
+- To run stream explicitly with new weights:
+  ```bash
+  ./run_rs.sh --weights runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt
+  ```
+- To make `best.pt` the permanent default, copy it to `weights.pt`:
+  ```bash
+  cp runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt weights.pt
+  ```
+
+## 15. Live Stream Comparison — YOLO11n vs YOLOv8m (2026-07-14)
+
+### 15.1 Discovery
+
+After testing `best.pt` (YOLOv8m-seg) on the live stream, it was observed to perform **visually worse** than `weights.pt` despite the latter having nominally lower val/test metrics. Investigation revealed:
+
+- `weights.pt` is a fine-tuned **YOLO11n-seg** (4 medtube classes), origin: a prior training run (likely Kaggle GPU run — no local weights folder preserved for that session).
+- The discrepancy is explained primarily by **inference speed**: YOLOv8m runs at ~112 ms/frame vs YOLO11n at ~21 ms/frame — a **5.4× difference** that severely impacts live stream smoothness.
+
+### 15.2 Head-to-Head Test-Split Benchmark (449 images)
+
+Both models evaluated with `model.val(split='test', imgsz=640, batch=8, device='cpu')`.
+
+| Metric | YOLO11n-seg (`weights.pt`) | YOLOv8m-seg (`best.pt`) |
+|---|---|---|
+| File size | 5.8 MB | 52 MB |
+| Inference speed | **20.7 ms/frame** | 111.6 ms/frame |
+| Box mAP50 | 0.983 | **0.985** |
+| Box mAP50-95 | 0.950 | **0.968** |
+| Mask mAP50 | 0.983 | **0.985** |
+| Mask mAP50-95 | **0.819** | 0.806 |
+
+**Per-class Mask mAP50 (test split):**
+
+| Class | YOLO11n | YOLOv8m |
+|---|---|---|
+| Other | 0.995 | **0.995** |
+| Push-on | 0.995 | **0.995** |
+| Screwcap | 0.947 | **0.954** |
+| Universal | 0.995 | **0.995** |
+
+### 15.3 Analysis
+
+- **Metric parity**: Both models are essentially equivalent on the test split — differences are within ~1–2 pp.
+- **Mask mAP50-95**: YOLO11n is +1.3 pp better than YOLOv8m on masks at high IoU thresholds, suggesting YOLO11's architectural improvements (C3k2, SPPF, C2PSA attention) produce tighter segmentation polygons on this data.
+- **Live stream feel**: The 5.4× speed advantage of YOLO11n makes it significantly smoother and more responsive. At 21 ms/frame it can approach 30–48 fps on CPU; YOLOv8m at 112 ms/frame is capped at ~9 fps.
+- **Generalisation**: The test set is from the same Roboflow export as training data. The live stream is real-world with different lighting and backgrounds — the nano model's lighter capacity may also reduce over-fitting to the annotation distribution.
+
+### 15.4 Recommended Next Step — YOLO11m Full Run
+
+The local YOLO11m run (`2026-07-12_22-07-43`) was interrupted before saving any weights. A proper comparison requires:
+- YOLO11m-seg trained for 100 epochs on the same cleaned dataset with the same mild augmentation preset.
+- This would isolate architecture generation (YOLO11 vs v8) from model size (nano vs medium).
+- Expected outcome: YOLO11m should beat YOLOv8m on both metrics and speed (YOLO11m is ~20% faster than YOLOv8m at equivalent size).
+
+**Interim decision**: keep `weights.pt` (YOLO11n) as the default for live streaming. Use `best.pt` (YOLOv8m) only for controlled benchmark comparison.
+
+### 15.5 Updated Artefact Paths
+
+| Artefact | Path |
+|---|---|
+| YOLO11n weights (live default) | `weights.pt` (repo root) |
+| YOLO11n test-split plots | `runs/segment/runs/test_results/YOLO11n-best-test/` |
+| YOLOv8m weights | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt` |
+| YOLOv8m test-split plots | `runs/segment/runs/test_results/YOLOv8-best-test/` |
