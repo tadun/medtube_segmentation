@@ -160,18 +160,21 @@
 
 Complete rewrite of the stream script into a production-ready YOLO segmentation viewer:
 
-**Display**
+#### Display
+
 - 2×2 grid window ("MedTube Segmentation Stream") auto-sized to fit the screen.
 - TL: raw RGB stream, TR: depth heatmap (auto-ranged TURBO), BL: stream + YOLO masks, BR: depth + YOLO masks.
 - Class-coloured masks matching data.yaml class order: Universal=red, Screwcap=green, Push-on=blue, Other=yellow.
 - Panel labels drawn with `FONT_HERSHEY_DUPLEX` on semi-transparent dark backgrounds.
 - HUD bar shows live/rec status, elapsed time, snapshot count, and full-text controls.
 
-**Capture**
+#### Capture
+
 - Space saves a 4-view snapshot set to `runs/captures/snapshots/`.
 - R starts/stops continuous recording to `runs/captures/rec_<timestamp>/` at 0.5 s intervals.
 
-**Camera/depth handling**
+#### Camera/depth handling
+
 - 180° flip applied at source (camera is mounted upside-down).
 - 4 s auto-exposure warmup after pipeline start.
 - Depth ROI locked on first stable frame to remove IR parallax zone.
@@ -214,7 +217,7 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 **Best checkpoint: epoch 85** (saved as `best.pt`, selected by Mask mAP50-95)
 
 | Metric | Value |
-|---|---|
+| --- | --- |
 | Box Precision | 0.9961 |
 | Box Recall | 0.9981 |
 | Box mAP50 | 0.9941 |
@@ -227,7 +230,7 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 **Final epoch (100) — validation split:**
 
 | Metric | Value |
-|---|---|
+| --- | --- |
 | Box mAP50 | 0.9941 |
 | Box mAP50-95 | 0.9763 |
 | Mask mAP50 | 0.9941 |
@@ -242,7 +245,7 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 **Per-class results (test split):**
 
 | Class | Images | Box P | Box R | Box mAP50 | Box mAP50-95 | Mask P | Mask R | Mask mAP50 | Mask mAP50-95 |
-|---|---|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | **all** | 449 | 0.990 | 0.991 | 0.985 | 0.968 | 0.991 | 0.993 | 0.985 | 0.806 |
 | Other | 144 | 0.996 | 0.993 | 0.995 | 0.957 | 1.000 | 1.000 | 0.995 | 0.748 |
 | Push-on | 131 | 0.999 | 0.992 | 0.995 | 0.978 | 0.999 | 0.992 | 0.995 | 0.791 |
@@ -250,6 +253,7 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 | Universal | 77 | 0.996 | 1.000 | 0.995 | 0.993 | 0.995 | 1.000 | 0.995 | 0.887 |
 
 **Observations:**
+
 - Screwcap is the hardest class (lowest mAP50-95 at 0.945 box / 0.798 mask) — consistent with live-stream confusion noted in §13.5.
 - Universal achieves perfect recall (1.0) and highest mask mAP50-95 (0.887).
 - The gap between mAP50 (~0.985) and mAP50-95 (~0.806) for masks suggests the model localises tubes well but mask tightness degrades at higher IoU thresholds — likely due to annotation polygon coarseness rather than model failure.
@@ -297,7 +301,7 @@ auto_augment: randaugment
 ### 14.4 Key Artefact Paths
 
 | Artefact | Path |
-|---|---|
+| --- | --- |
 | Best weights | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt` |
 | Last weights | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/last.pt` |
 | Training metrics CSV | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/results.csv` |
@@ -312,10 +316,13 @@ auto_augment: randaugment
 - `weights.pt` (repo root, 5.8 MB) is a different/older model — **not** the newly trained weights.
 - `FALLBACK_WEIGHTS` in `realsense_stream.py` already points to `best.pt` automatically if `weights.pt` is absent.
 - To run stream explicitly with new weights:
+
   ```bash
   ./run_rs.sh --weights runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt
   ```
+
 - To make `best.pt` the permanent default, copy it to `weights.pt`:
+
   ```bash
   cp runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt weights.pt
   ```
@@ -334,7 +341,7 @@ After testing `best.pt` (YOLOv8m-seg) on the live stream, it was observed to per
 Both models evaluated with `model.val(split='test', imgsz=640, batch=8, device='cpu')`.
 
 | Metric | YOLO11n-seg (`weights.pt`) | YOLOv8m-seg (`best.pt`) |
-|---|---|---|
+| --- | --- | --- |
 | File size | 5.8 MB | 52 MB |
 | Inference speed | **20.7 ms/frame** | 111.6 ms/frame |
 | Box mAP50 | 0.983 | **0.985** |
@@ -345,7 +352,7 @@ Both models evaluated with `model.val(split='test', imgsz=640, batch=8, device='
 **Per-class Mask mAP50 (test split):**
 
 | Class | YOLO11n | YOLOv8m |
-|---|---|---|
+| --- | --- | --- |
 | Other | 0.995 | **0.995** |
 | Push-on | 0.995 | **0.995** |
 | Screwcap | 0.947 | **0.954** |
@@ -361,6 +368,7 @@ Both models evaluated with `model.val(split='test', imgsz=640, batch=8, device='
 ### 15.4 Recommended Next Step — YOLO11m Full Run
 
 The local YOLO11m run (`2026-07-12_22-07-43`) was interrupted before saving any weights. A proper comparison requires:
+
 - YOLO11m-seg trained for 100 epochs on the same cleaned dataset with the same mild augmentation preset.
 - This would isolate architecture generation (YOLO11 vs v8) from model size (nano vs medium).
 - Expected outcome: YOLO11m should beat YOLOv8m on both metrics and speed (YOLO11m is ~20% faster than YOLOv8m at equivalent size).
@@ -370,7 +378,7 @@ The local YOLO11m run (`2026-07-12_22-07-43`) was interrupted before saving any 
 ### 15.5 Updated Artefact Paths
 
 | Artefact | Path |
-|---|---|
+| --- | --- |
 | YOLO11n weights (live default) | `weights.pt` (repo root) |
 | YOLO11n test-split plots | `runs/segment/runs/test_results/YOLO11n-best-test/` |
 | YOLOv8m weights | `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt` |
@@ -381,13 +389,14 @@ The local YOLO11m run (`2026-07-12_22-07-43`) was interrupted before saving any 
 ### 16.1 Decision
 
 Two additional models trained via Roboflow cloud (GPU) to broaden the comparison:
+
 1. **YOLOv8n-seg** — nano-tier v8 baseline; also provides a size-comparison data point within the v8 family
 2. **RF-DETR (Small)** — transformer-based instance segmentation; architecturally distinct from the YOLO family
 
 ### 16.2 Training Configuration
 
 | Setting | YOLOv8n-seg | RF-DETR-S |
-|---|---|---|
+| --- | --- | --- |
 | Platform | Roboflow cloud (GPU) | Roboflow cloud (GPU) |
 | Input resolution | 640×640 | **384×384** (RF-DETR recommended) |
 | Dataset | Same Roboflow export | Same Roboflow export |
@@ -405,6 +414,6 @@ Note: RF-DETR uses 384×384 because that is its recommended optimum (Roboflow gu
 ### 16.4 Results (fill in once training completes)
 
 | Model | Train platform | imgsz | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 |
-|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- |
 | YOLOv8n-seg | Roboflow cloud | 640 | — | — | — | — |
 | RF-DETR-S | Roboflow cloud | 384 | — | — | — | — |

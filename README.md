@@ -103,7 +103,7 @@ Displays a 2×2 grid window: **RGB** | **Depth Heatmap** (top), **Stream + Masks
 sudo rs_env/bin/python realsense_stream.py
 ```
 
-**Class colour coding**
+#### Class colour coding
 
 | Class     | Colour  |
 |-----------|---------|
@@ -112,7 +112,7 @@ sudo rs_env/bin/python realsense_stream.py
 | Push-on   | Blue    |
 | Other     | Yellow  |
 
-**Controls**
+#### Controls
 
 | Key     | Action                          |
 |---------|---------------------------------|
@@ -120,7 +120,7 @@ sudo rs_env/bin/python realsense_stream.py
 | `R`     | Start / stop recording          |
 | `Q`     | Quit                            |
 
-**Depth panels**
+#### Depth panels
 
 - *Depth Heatmap* (TR): TURBO colourmap auto-ranged to valid depth per frame.
 - *Depth + Masks* (BR): TURBO colourmap using the same scene-calibrated range as `collect_dataset.py` (435–535 mm default).
@@ -133,13 +133,11 @@ runs/captures/
   rec_YYYYMMDD_HHMMSS/    ← R key      (same 4 views per frame, every 0.5 s)
 ```
 
-**Camera setup**
+#### Camera setup
 
 - Camera is mounted upside-down; the stream applies a 180° flip automatically.
 - Recommended height above scene: 600–800 mm for best depth accuracy and minimal IR parallax.
 - Depth ROI is auto-detected on the first stable frame to remove the IR parallax blind zone.
-
-
 
 Trains YOLOv8-seg, YOLOv9-seg and YOLOv11-seg on the same dataset with identical augmentation settings and prints a side-by-side mAP summary.
 
