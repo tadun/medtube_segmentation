@@ -359,7 +359,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
                 if valid_d.size < 100:
                     valid_d = roi_depth[roi_depth > 0].astype(np.float32)
                 d_lo       = float(np.percentile(valid_d, 5))
-                d_hi       = float(np.percentile(valid_d, 95))
+                d_hi       = float(np.percentile(valid_d, 75))    # 75th cuts out far walls
                 depth_range = (max(0.0, d_lo - 20.0), d_hi + 20.0)
                 print(f"[info] Depth ROI locked: x={x0}:{x1}, y={y0}:{y1}")
                 print(f"[info] Depth range auto-estimated: {depth_range[0]:.0f}–{depth_range[1]:.0f} mm")
