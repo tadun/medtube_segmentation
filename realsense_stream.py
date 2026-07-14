@@ -23,13 +23,13 @@ DEPTH_WIDTH  = 1280
 DEPTH_HEIGHT = 720
 DEPTH_FPS    = 30
 
-# Scene depth calibration — matches collect_dataset.py
-SURFACE_DISTANCE_MM   = 495
-TUBE_MAX_THICKNESS_MM = 40
+# Scene depth calibration — actual capture setup
+SURFACE_DISTANCE_MM   = 480   # camera raised 30 mm → surface now at ~480 mm
+TUBE_MAX_THICKNESS_MM = 30
 DEPTH_NEAR_MARGIN_MM  = 20
 DEPTH_FAR_MARGIN_MM   = 40
-DEPTH_MIN_MM = SURFACE_DISTANCE_MM - TUBE_MAX_THICKNESS_MM - DEPTH_NEAR_MARGIN_MM  # 435 mm
-DEPTH_MAX_MM = SURFACE_DISTANCE_MM + DEPTH_FAR_MARGIN_MM                           # 535 mm
+DEPTH_MIN_MM = SURFACE_DISTANCE_MM - TUBE_MAX_THICKNESS_MM - DEPTH_NEAR_MARGIN_MM  # 430 mm
+DEPTH_MAX_MM = SURFACE_DISTANCE_MM + DEPTH_FAR_MARGIN_MM                           # 520 mm
 
 # Depth ROI crop — aligns both panels to the valid depth FOV
 DEPTH_FOV_PAD_PX    = 2
@@ -315,8 +315,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
 
     WIN = "MedTube D415  |  TL: RGB   TR: Depth   BL: Masks   BR: Depth+Masks"
     cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WIN, 1100, 858)   # fixed — content auto-scales inside
-    window_sized = False
+    cv2.resizeWindow(WIN, 1100, 700)
 
     while True:
         try:
@@ -361,18 +360,11 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
                          else depth_to_heatmap(depth_mm))
         depth_masked  = overlay_masks_on_depth(depth_preview.copy(), results[0])
 
-        # Crop all four panels to the valid depth FOV
-        if depth_roi is not None:
-            y0, y1, x0, x1 = depth_roi
-            c_stream  = color_image[y0:y1, x0:x1]
-            c_overlay = img_overlay[y0:y1, x0:x1]
-            c_depth   = depth_masked[y0:y1, x0:x1]
-            c_heat    = depth_heat[y0:y1, x0:x1]
-        else:
-            c_stream  = color_image
-            c_overlay = img_overlay
-            c_depth   = depth_masked
-            c_heat    = depth_heat
+        # Always show full frames — avoids portrait-shaped panels from narrow depth ROI
+        c_stream  = color_image
+        c_overlay = img_overlay
+        c_depth   = depth_masked
+        c_heat    = depth_heat
 
         now = time.time()
 
@@ -400,13 +392,6 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
                         snapshot_index - 1, rec_count, now - start_ts)
 
         cv2.imshow(WIN, grid)
-
-        # Auto-size window width, capped to avoid going off-screen
-        if not window_sized:
-            gh, gw = grid.shape[:2]
-            win_w = min(int(gw * 858 / gh), 1100)
-            cv2.resizeWindow(WIN, win_w, 858)
-            window_sized = True
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
