@@ -13,7 +13,7 @@ _MPL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("YOLO_CONFIG_DIR", str(_ULTRALYTICS_CONFIG_DIR))
 os.environ.setdefault("MPLCONFIGDIR", str(_MPL_CONFIG_DIR))
 
-from ultralytics import YOLO
+from ultralytics import YOLO  # noqa: E402
 
 # --- Stream configuration (USB 3 — matches collect_dataset.py) ---
 COLOR_WIDTH  = 1280
@@ -154,7 +154,7 @@ def get_mask_binary(seg_xy: np.ndarray, h: int, w: int) -> np.ndarray:
         return np.zeros((h, w), dtype=bool)
     pts = seg_xy.astype(np.int32).reshape(-1, 1, 2)
     bm  = np.zeros((h, w), dtype=np.uint8)
-    cv2.fillPoly(bm, [pts], 1)
+    cv2.fillPoly(bm, [pts], (1,))
     return bm.astype(bool)
 
 
@@ -371,6 +371,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
 
         # Auto-save all four views during recording
         if recording and (now - last_rec_save) >= REC_SAVE_INTERVAL_S:
+            assert rec_dir is not None
             ts = time.strftime("%Y%m%d_%H%M%S")
             cv2.imwrite(str(rec_dir / f"stream_{ts}_{rec_count:04d}.png"),  c_stream)
             cv2.imwrite(str(rec_dir / f"overlay_{ts}_{rec_count:04d}.png"), c_overlay)
@@ -468,7 +469,7 @@ def main():
             time.sleep(4.0)
             depth_scale = profile.get_device().first_depth_sensor().get_depth_scale()
             print(f"[info] Streaming — depth scale: {depth_scale:.6f} m/unit")
-            print(f"[info] Depth colourmap: TURBO  auto-estimated from scene on ROI lock")
+            print("[info] Depth colourmap: TURBO  auto-estimated from scene on ROI lock")
             done = stream_loop(pipeline, align, model, save_dir, start_ts)
         finally:
             try:
