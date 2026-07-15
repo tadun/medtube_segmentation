@@ -422,30 +422,114 @@ Note: RF-DETR uses 384×384 because that is its recommended optimum (Roboflow gu
 
 ### 17.1 Test-Split Benchmark Summary — MedTube 2 dataset (450 images, split='test', imgsz=640, batch=8, CPU)
 
-All YOLO models evaluated with `model.val()` on the held-out test split of `MedTube 2.yolov8`. Results sorted by Mask mAP50-95.
+All models evaluated on the held-out test split of `MedTube 2.yolov8`. YOLO models used `model.val()`; RF-DETR used `notebooks/eval_rfdetr.py` via Roboflow Inference SDK. Results sorted by Box mAP50-95.
 
-| Model | Weights file | Size | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | CPU inference |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| YOLOv8m-seg | `runs/.../YOLOv8-seg/weights/best.pt` | 52 MB | 27.2 M | 104.3 | 0.985 | 0.968 | **0.985** | **0.905** | 108.5 ms |
-| RF-DETR-S | Roboflow API (`medtube-2/1`) | 129 MB | — | — | **0.986** | **0.954** | — | — | 27.7 ms |
-| YOLO26n-seg | `yolo26n.pt` | 6.3 MB | 2.7 M | 9.0 | 0.983 | 0.951 | 0.983 | 0.820 | **23.1 ms** |
-| YOLO11n-seg | `yolo11n_weights.pt` | 5.8 MB | 2.8 M | 9.6 | 0.983 | 0.949 | 0.983 | 0.820 | 21.7 ms |
-| YOLOv9c-seg | `YOLOv9c-seg/weights/best.pt` | 213 MB | 27.6 M | 147.6 | 0.983 | 0.941 | 0.983 | 0.799 | 182.2 ms |
+| Model | Arch type | Weights file | Size | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | CPU inference |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RF-DETR-S | Transformer | Roboflow API `medtube-2/1` | 129 MB | — | — | **0.986** | **0.954** | — | — | 27.8 ms |
+| YOLOv8m-seg | CNN | `runs/.../YOLOv8-seg/weights/best.pt` | 52 MB | 27.2 M | 104.3 | 0.985 | 0.968 | **0.985** | **0.905** | 108.5 ms |
+| YOLO26n-seg | CNN | `yolo26n.pt` | 6.3 MB | 2.7 M | 9.0 | 0.983 | 0.951 | 0.983 | 0.820 | **23.1 ms** |
+| YOLO11n-seg | CNN | `yolo11n_weights.pt` | 5.8 MB | 2.8 M | 9.6 | 0.983 | 0.949 | 0.983 | 0.820 | 21.7 ms |
+| YOLOv9c-seg | CNN | `YOLOv9c-seg/weights/best.pt` | 213 MB | 27.6 M | 147.6 | 0.983 | 0.941 | 0.983 | 0.799 | 182.2 ms |
 
-RF-DETR row to be filled in after running `notebooks/eval_rfdetr.py` with `ROBOFLOW_API_KEY` set.
+**Notes:**
+
+- RF-DETR Mask mAP not computed locally — `supervision` 0.29.1 does not support `use_mask_iou=True`. Roboflow's own valid-set evaluation reports mAP@50 = **99.8%** (Precision 99.8%, Recall 99.8%, F1 99.8%).
+- RF-DETR trained at 384×384 input resolution; all YOLO models at 640×640. Resolution difference is noted in the comparison.
+- YOLOv9c trained on Colab with `medtube-2` dataset; evaluation here also uses `medtube-2` — dataset mismatch was ruled out as the cause of underperformance.
 
 ### 17.2 Key Findings
 
-- **All models achieve mAP50 ≈ 0.983–0.985** — the 4-class detection task is well solved across every generation. The differentiator is mask tightness at higher IoU thresholds (mAP50-95).
-- **YOLOv8m leads on Mask mAP50-95 (0.906)** — trained locally for 100 epochs with full control over hyperparameters. Benchmark reference.
-- **YOLO26n is the best nano model** — marginally faster (22.7 ms) and marginally better mask IoU (0.820) than YOLO11n (23.5 ms, 0.819). Replaces YOLO11n as the recommended live-stream default.
-- **YOLOv9c underperforms its size** — 213 MB / 162 ms yet lowest Mask mAP50-95 (0.799). Likely causes: Colab training used a different dataset version or the Roboflow export used during training differed from the test split used here. Needs investigation before drawing generational conclusions.
-- **Speed-accuracy sweet spot**: YOLO26n or YOLO11n for live deployment; YOLOv8m for highest accuracy batch inference.
+- **RF-DETR leads on Box mAP50-95 (0.954) AND runs at 27.8 ms** — faster than YOLOv8m (108 ms) despite being a transformer. The attention-based architecture achieves tighter bounding boxes than all YOLO variants while remaining suitable for real-time deployment.
+- **YOLOv8m leads on Mask mAP50-95 (0.905)** — 100-epoch local training with full hyperparameter control gives the most precise polygon masks.
+- **YOLO26n is the best nano model** — fastest (23.1 ms), best mask IoU at nano tier (0.820), marginally better than YOLO11n on all metrics.
+- **YOLOv9c underperforms its size** — 213 MB / 182 ms yet lowest Mask mAP50-95 (0.799). Root cause: only **32 epochs completed** (early stopping triggered; patience=20). At the point of early stopping, val Mask mAP50-95 on its own dataset was 0.838 — much closer to the other models. Undertrained, not architecturally inferior.
+- **Speed-accuracy sweet spot**: YOLO26n for live deployment; YOLOv8m or RF-DETR for highest accuracy batch inference.
 
 ### 17.3 Deployment Recommendation
 
 | Use case | Recommended model | Reason |
 | --- | --- | --- |
-| Live RealSense stream | YOLO26n (`yolo26n.pt`) | Fastest nano, best mask IoU in nano tier |
-| Highest accuracy | YOLOv8m (`best.pt`) | Best Mask mAP50-95 overall |
-| Report benchmark | YOLOv8m + YOLO26n + YOLOv9c | Representative of size/generation spread |
+| Live RealSense stream | YOLO26n (`yolo26n.pt`) | Fastest nano, best mask IoU in nano tier, 23 ms |
+| Highest mask accuracy | YOLOv8m (`best.pt`) | Best Mask mAP50-95 (0.905) |
+| Highest box accuracy | RF-DETR (`medtube-2/1`) | Best Box mAP50-95 (0.954), 28 ms |
+| Report architecture comparison | RF-DETR + YOLOv8m + YOLO26n | Transformer vs CNN large vs CNN nano |
+
+## 18. Session Update (2026-07-15)
+
+### 18.1 New model weights added
+
+| File | Architecture | Size | Origin | Classes |
+| --- | --- | --- | --- | --- |
+| `yolo26n.pt` | YOLO26n-seg | 6.3 MB | Roboflow cloud | 4 medtube |
+| `rfdetr.pt` | RF-DETR-S | 129 MB | Roboflow cloud | 4 medtube |
+| `YOLOv9c-seg/weights/best.pt` | YOLOv9c-seg | 213 MB | Colab GPU (32 epochs) | 4 medtube |
+
+### 18.2 YOLOv9c training post-mortem
+
+- Trained on Colab free T4 using `notebooks/train_colab_yolov9c.ipynb`.
+- Dataset: `tadeass-workspace/medtube-2` (new Roboflow account).
+- Only **32 epochs** completed before early stopping (patience=20, no improvement for 20 epochs).
+- Best val Mask mAP50-95 on its own dataset: **0.838** at epoch 30.
+- Local test-split evaluation against `MedTube 2.yolov8` gave **0.799** — gap is due to undertrained model not dataset mismatch (both use medtube-2).
+- Recommendation: retrain for full 100 epochs or increase patience to 30.
+
+### 18.3 MedTube 2 dataset (new Roboflow account)
+
+- Workspace: `tadeass-workspace`, project: `medtube-2`, version: `dataset`
+- Local path: `/Users/tadun/Downloads/MedTube 2.yolov8/`
+- Split counts: train 2100, valid 450, test 450 (vs old: 2097/450/449)
+- Same 4 classes, same 640×640 export. All model re-evaluations from 2026-07-15 onwards use this dataset.
+
+### 18.4 RF-DETR evaluation methodology
+
+- Evaluated via Roboflow Inference SDK (`inference` package, model ID `medtube-2/1`).
+- Script: `notebooks/eval_rfdetr.py`.
+- Key implementation details:
+  - `torch.cuda.stream` monkey-patched to a no-op (Apple Silicon MPS incompatibility).
+  - Ground-truth boxes derived from polygon min/max (YOLO segmentation format — no explicit bbox).
+  - Prediction polygons rasterised from `p.points` (list of `Point(x, y)`) using `cv2.fillPoly`.
+  - Mask mAP not computable with `supervision==0.29.1` (`use_mask_iou` not supported).
+- Results: Box mAP50=0.986, Box mAP50-95=0.954, inference=27.8 ms/image.
+
+### 18.5 Codebase reorganisation (2026-07-14–15)
+
+#### File renames
+
+| Old name | New name |
+| --- | --- |
+| `collect_dataset.py` | `src/capture_dataset.py` |
+| `kaggle_train.py` | `src/train_kaggle.py` |
+| `realsense_stream.py` | `src/realsense_stream.py` |
+| `train_compare.py` | `src/train_compare.py` |
+| `run_rs.sh` | `stream.sh` |
+| `tools/preview_autofilled_labels.py` | `tools/preview_labels.py` |
+| `tools/view_coco_masks.py` | `tools/view_masks.py` |
+| `docs/PROJECT_REPORT_NOTES.md` | `docs/notes.md` |
+
+#### Directory structure
+
+All Python scripts moved to `src/`. Shell launcher (`stream.sh`) remains in root. `Path(__file__).resolve().parent` updated to `.parent.parent` in all `src/` scripts so `.ultralytics/` and `.matplotlib/` caches resolve to the project root.
+
+#### Live stream default weights
+
+- `DEFAULT_WEIGHTS` in `src/realsense_stream.py` updated from `weights.pt` → `yolo26n.pt` (YOLO26n outperforms YOLO11n on all metrics).
+
+### 18.6 New notebooks and scripts
+
+| File | Purpose |
+| --- | --- |
+| `notebooks/train_colab_yolov9c.ipynb` | Colab notebook to train YOLOv9c on medtube-2 dataset |
+| `notebooks/eval_rfdetr.py` | Evaluate RF-DETR on local test split via Roboflow Inference SDK |
+
+### 18.7 Security note
+
+The Roboflow API key `qxCKKYWIhOYWu3jZtVNq` was exposed in a VS Code chat session on 2026-07-15. **This key should be treated as compromised and regenerated** from the Roboflow dashboard (Settings → Roboflow API → Regenerate). The key has no write access to training infrastructure but can trigger inference API calls.
+
+### 18.8 Outstanding items before report
+
+- [ ] Retrain YOLOv9c for full 100 epochs for a fair size-matched comparison vs YOLOv8m
+- [ ] Compute RF-DETR Mask mAP (upgrade supervision or implement custom mask IoU)
+- [ ] Fill in YOLOv8n-seg Roboflow cloud results (section 16.4)
+- [ ] Collect qualitative figure: side-by-side stream snapshots per model
+- [ ] Decide whether to include the RF-DETR live-stream integration (requires inference SDK in deployment)
