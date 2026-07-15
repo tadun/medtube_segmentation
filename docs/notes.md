@@ -417,3 +417,32 @@ Note: RF-DETR uses 384×384 because that is its recommended optimum (Roboflow gu
 | --- | --- | --- | --- | --- | --- | --- |
 | YOLOv8n-seg | Roboflow cloud | 640 | — | — | — | — |
 | RF-DETR-S | Roboflow cloud | 384 | — | — | — | — |
+
+## 17. Full Model Comparison — All YOLO Variants (2026-07-15)
+
+### 17.1 Test-Split Benchmark Summary (449 images, split='test', imgsz=640, batch=8, CPU)
+
+All models evaluated with `model.val()` on the held-out test split. Results sorted by Mask mAP50-95.
+
+| Model | Weights file | Size | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | CPU inference |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| YOLOv8m-seg | `runs/.../YOLOv8-seg/weights/best.pt` | 52 MB | 27.2 M | 104.3 | **0.985** | **0.968** | **0.985** | **0.906** | 107 ms |
+| YOLO26n-seg | `yolo26n.pt` | 6.3 MB | 2.7 M | 9.0 | 0.983 | 0.951 | 0.983 | 0.820 | **22.7 ms** |
+| YOLO11n-seg | `yolo11n_weights.pt` | 5.8 MB | 2.8 M | 9.6 | 0.983 | 0.950 | 0.983 | 0.819 | 23.5 ms |
+| YOLOv9c-seg | `YOLOv9c-seg/weights/best.pt` | 213 MB | 27.6 M | 147.6 | 0.983 | 0.941 | 0.983 | 0.799 | 162 ms |
+
+### 17.2 Key Findings
+
+- **All models achieve mAP50 ≈ 0.983–0.985** — the 4-class detection task is well solved across every generation. The differentiator is mask tightness at higher IoU thresholds (mAP50-95).
+- **YOLOv8m leads on Mask mAP50-95 (0.906)** — trained locally for 100 epochs with full control over hyperparameters. Benchmark reference.
+- **YOLO26n is the best nano model** — marginally faster (22.7 ms) and marginally better mask IoU (0.820) than YOLO11n (23.5 ms, 0.819). Replaces YOLO11n as the recommended live-stream default.
+- **YOLOv9c underperforms its size** — 213 MB / 162 ms yet lowest Mask mAP50-95 (0.799). Likely causes: Colab training used a different dataset version or the Roboflow export used during training differed from the test split used here. Needs investigation before drawing generational conclusions.
+- **Speed-accuracy sweet spot**: YOLO26n or YOLO11n for live deployment; YOLOv8m for highest accuracy batch inference.
+
+### 17.3 Deployment Recommendation
+
+| Use case | Recommended model | Reason |
+| --- | --- | --- |
+| Live RealSense stream | YOLO26n (`yolo26n.pt`) | Fastest nano, best mask IoU in nano tier |
+| Highest accuracy | YOLOv8m (`best.pt`) | Best Mask mAP50-95 overall |
+| Report benchmark | YOLOv8m + YOLO26n + YOLOv9c | Representative of size/generation spread |

@@ -63,7 +63,7 @@ GRID_GAP      = 6     # gap in pixels between panels (dark separator)
 
 RECONNECT_DELAY  = 3
 MAX_RETRIES      = 10
-DEFAULT_WEIGHTS  = "yolo11n_weights.pt"
+DEFAULT_WEIGHTS  = "yolo26n.pt"
 FALLBACK_WEIGHTS = "runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt"
 DEFAULT_SAVE_DIR  = Path("runs/captures")
 SNAPSHOT_SUBDIR   = "snapshots"
