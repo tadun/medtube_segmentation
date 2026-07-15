@@ -76,20 +76,19 @@ for img_path in image_paths:
     preds = sv.Detections(xyxy=pred_boxes, confidence=pred_confs, class_id=pred_labels)
     all_predictions.append(preds)
 
-    # Load ground truth from YOLO label file
+    # Load ground truth from YOLO segmentation label file
+    # Format: class x1 y1 x2 y2 ... (normalised polygon vertices — NO explicit bbox)
     label_path = TEST_LABELS / (img_path.stem + ".txt")
     gt_boxes, gt_labels = [], []
     if label_path.exists():
         for line in label_path.read_text().splitlines():
             parts = line.strip().split()
-            if len(parts) >= 5:
+            if len(parts) >= 5:  # class + at least 2 polygon points
                 cls = int(parts[0])
-                cx, cy, bw, bh = map(float, parts[1:5])
-                x1 = (cx - bw / 2) * w
-                y1 = (cy - bh / 2) * h
-                x2 = (cx + bw / 2) * w
-                y2 = (cy + bh / 2) * h
-                gt_boxes.append([x1, y1, x2, y2])
+                coords = list(map(float, parts[1:]))
+                xs = [coords[i] * w for i in range(0, len(coords), 2)]
+                ys = [coords[i] * h for i in range(1, len(coords), 2)]
+                gt_boxes.append([min(xs), min(ys), max(xs), max(ys)])
                 gt_labels.append(cls)
     gt = sv.Detections(
         xyxy=np.array(gt_boxes, dtype=np.float32) if gt_boxes else np.empty((0, 4)),
