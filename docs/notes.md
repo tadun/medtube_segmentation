@@ -533,3 +533,308 @@ The Roboflow API key `qxCKKYWIhOYWu3jZtVNq` was exposed in a VS Code chat sessio
 - [ ] Fill in YOLOv8n-seg Roboflow cloud results (section 16.4)
 - [ ] Collect qualitative figure: side-by-side stream snapshots per model
 - [ ] Decide whether to include the RF-DETR live-stream integration (requires inference SDK in deployment)
+
+---
+
+## 19. Parent Folder Inventory (Final Project/)
+
+The parent directory `/Users/tadun/Documents/2026/Final Project/` contains additional
+resources, prior work, and documentation relevant to the report.
+
+### 19.1 Project Guidelines
+
+- **MSc - Advanced Project Guidelines (2025-26).docx** — Official project submission guidelines (word count, structure, formatting, marking criteria). Must be followed for report layout.
+
+### 19.2 Conveyor-Belt-Tube-Detection-System (Jessiah Buamah)
+
+A companion/prior project by Jessiah Buamah providing a **digital twin framework** for medical tube sorting using reinforcement learning and robotics:
+
+- **Simulation engine:** PyBullet physics with 3D conveyor belt, hopper, air jets, and collection bins
+- **Detection model:** YOLOv8n (object detection, not segmentation) trained on synthetic PyBullet-rendered images (320×320, 1000 images)
+- **Tube types:** 5 classes — Polypropylene Tube 1, Polypropylene Tube 2, Polystyrene Tube 1, Polystyrene Tube 2, Lysis Tube
+- **RL algorithms:** PPO and SAC (Stable-Baselines3 + Gymnasium)
+- **Robot:** UR5 + Robotiq 85 gripper (simulated) for cap unscrewing/disassembly
+- **Results:** SAC achieved 81% peak sorting accuracy; PPO most stable convergence; robotic disassembly 72–85% success
+- **Relation to MedTube:** This project provides the downstream sorting/disassembly context that motivates high-quality upstream segmentation. MedTube segmentation feeds into this pipeline.
+- **Key files:** `object_deyection.py`, `rl_training_ppo.py`, `sample_test.py`, `tube_detection_project.py`
+- **3D assets:** URDF files for conveyor belts, air jets, bins, UR5 robot; OBJ/MTL meshes for tube types
+- **Pipeline figure:** `assets/figure2.png` — Medical Tube Segregation and Disassembly Pipeline diagram
+
+### 19.3 Early Object Detection Results
+
+**object_detection_results.txt** — Inference log from an early YOLOv8 detection model on the `datasets/` folder (Tube 1–8, VACUETTE types):
+
+- Most detections have very low confidence (0.01–0.06), indicating an under-trained or mismatched model
+- Class names used: PS-Tube (Polystyrene), PP-Tube (Polypropylene), Colour-Checker
+- Demonstrates the need for a properly trained segmentation model (motivation for MedTube project)
+
+### 19.4 datasets/ Folder (Original Tube Photos)
+
+Hand-collected iPhone photographs of real medical tubes, organised by type:
+
+| Folder | Tube Type | Content |
+| --- | --- | --- |
+| Tube 1–8 | Generic numbered sets | ~10 JPEG photos each |
+| VACUETTE K3E K3EDTA | EDTA anticoagulant tube (purple cap) | ~10 photos |
+| VACUETTE LH LITHIUM HEPARIN SEP | Lithium heparin separator (green cap) | ~10 photos |
+| VACUETTE Sodium Heparin Blue PREMIUM 6mL | Sodium heparin (blue cap) | ~10 photos |
+| VACUETTE TUBE 7 ml CAT Serum Separator | Serum separator (gold/yellow cap) | ~10 photos |
+| VACUETTE TUBE 9 ml 9NC Coagulation sodium citrate | Coagulation tube (light blue cap) | ~10 photos |
+| VACUETTE Tube CAT Serum Separator Clot Activator | Clot activator (red cap) | ~10 photos |
+| Vacuette Tube 2ml FX Sodium Fluoride Potassium Oxalate | Fluoride/oxalate tube (grey cap) | ~10 photos |
+
+**Note:** These are early exploratory photos taken before the RealSense D415 setup. The MedTube segmentation dataset uses the RealSense captures instead.
+
+### 19.5 Papers/ Folder (Literature Already Collected)
+
+Five PDF papers already saved in `Papers/`:
+
+1. **3093-4155-1-PB.pdf** — (Unidentified, needs title extraction)
+2. **e3sconf_icfee2024_04001.pdf** — E3S Conference on Frontiers of Energy and Environment 2024
+3. **s41598-023-45759-z.pdf** — Nature Scientific Reports 2023 paper
+4. **sensors-20-03816.pdf** — MDPI Sensors 2020 paper
+5. **sensors-21-01213.pdf** — MDPI Sensors 2021 paper
+
+### 19.6 Other PDFs at Root Level
+
+- **MedBin.pdf** — Likely a related medical waste/recycling bin design document
+- **Real-Time_Progressive_3D_Semantic_Segmentation_for_Indoor_Scenes.pdf** — 3D semantic segmentation paper (reference for depth-based approaches)
+- **Robotics_Conference_Paper vF.pdf** — Robotics conference paper (likely related to the UR5 disassembly pipeline)
+- **download.pdf** — Unknown (needs title extraction)
+
+### 19.7 Documents/ Folder (Administrative & Presentations)
+
+#### Presentations
+
+- **MedTube_Segmentation.pptx** — Main project presentation (original version)
+- **MedTube_Segmentation (1).pptx** — Revised presentation
+- **MedTube_Segmentation 2.pptx** — Latest presentation (also at root level)
+- **MedPlasticLoughUni.pptx** — MedPlastic presentation (Loughborough University context)
+- **MedPlastic_JfDu.pptx** — MedPlastic presentation (JfDu variant)
+- **Researching and writing systematic reviews.pptx** — Academic writing guide
+
+#### Project Documents
+
+- **AI Enabled MTP Sorting System Architecture.docx** — System architecture document for the AI-enabled Medical Tube Product sorting system
+- **AI and ML-Driven Automated Sorting System.pdf** — Published/formal document on the sorting system
+- **MTPContainers.docx** — Medical Tube Product container specifications
+- **MedTube - Presentation Outline.docx / .rtf** — Presentation outline drafts
+
+#### Administrative
+
+- **Risk Assessment Form - Horn.docx** — Health and safety risk assessment
+- **Ethical Review Form - Horn.pdf / .docx** — Ethical review documentation (signed)
+- **FYP and MSc Projects - Ethical Review Form (2).docx** — University ethical review template
+- **GENERAL HEALTH AND SAFETY RISK ASSESSMENT FORM.docx** — General H&S template
+- **MSc - Impact Statement Brief Notes (2025-26).docx** — Impact statement guidance
+- **MSc - Lecture Notes on Impact (June 2026).pdf** — Impact lecture notes
+- **BlueBearLogin.docx** — BlueBear HPC login details (University of Birmingham)
+- **Summer Project Meeting Form.docx** — Template meeting form
+
+#### Meeting Forms (Supervision Records)
+
+- **Meeting Form - May.docx** — May 2026 meeting record
+- **Meeting Form - June.docx** — June 2026 meeting record
+- **Meeting Form - July.docx** — July 2026 meeting record
+
+#### Data
+
+- **class_balance.csv** — Final class distribution across splits:
+
+| Class | Total | Train | Valid | Test |
+| --- | --- | --- | --- | --- |
+| Other | 909 | 637 | 127 | 145 |
+| Push-on | 906 | 642 | 134 | 130 |
+| Screwcap | 716 | 506 | 109 | 101 |
+| Universal | 506 | 345 | 82 | 79 |
+| **Total** | **3037** | **2130** | **452** | **455** |
+
+### 19.8 Pictures/ Folder (Reference Images)
+
+- **IMG_6344.jpeg, IMG_6374.jpeg** — Photos of physical medical tubes
+- **IMG_9128.HEIC** — Additional tube photo
+- **Blood-collection-tubes-Emilie-Brysting.webp** — Reference image of blood collection tubes (various cap colours)
+- **Medical_recycling.png** — Medical recycling context image
+- **yolo-(1).jpg** — YOLO architecture diagram (for report figure)
+- **crested-wm-full-colour-e1671624830551.png** — University of Birmingham crest/watermark
+- **ChatGPT Image Jun 17, 2026, 06_21_33 PM.png** — AI-generated concept image
+- **ChatGPT Image Jun 17, 2026, 06_40_30 PM.png** — AI-generated concept image
+- **Gemini_Generated_Image_gtoafwgtoafwgtoa.png** — AI-generated image
+- **1_olhihapANay0HcoPzRclcA.png** — Reference diagram
+- **cf927d5f-5584-4b0c-8d82-9caa45c58e32.png** — Reference image
+
+### 19.9 Screenshots/ Folder (Development Timeline Evidence)
+
+51 screenshots documenting the entire development process chronologically:
+
+| Date | Content |
+| --- | --- |
+| 2026-01-22 | Project topic selection form (Machine Vision ranked #1) |
+| 2026-06-01 | VACUETTE tube photos; Roboflow SAM annotation interface |
+| 2026-06-17 | Early RealSense D415 capture of screwcap tube |
+| 2026-06-21 | RealSense SDK viewer (depth + RGB streams) |
+| 2026-06-26 | Development progress screenshot |
+| 2026-07-09 | Roboflow dashboard (3000 images); dataset analytics (class distribution); annotation heatmaps |
+| 2026-07-12 | Training setup and early epoch screenshots |
+| 2026-07-13 | Roboflow MedTube 2 workspace: V1 with YOLOv11n-seg model training |
+| 2026-07-14 | Live stream 2×2 view with mask overlays; training curves; Roboflow training graphs; Colab YOLOv9c training on T4 GPU |
+| 2026-07-15 | Final model testing on Roboflow; MedTube 2 cloud training results |
+
+### 19.10 Video Assets
+
+- **MedTube_Segmentation_Horn.mp4** — Video demonstration (likely live inference demo or presentation recording)
+- **SimulationVideo.mov** — PyBullet conveyor belt simulation video (Conveyor-Belt project)
+
+### 19.11 Roboflow Account Details
+
+- **User:** txh543@student.bham.ac.uk
+- **Workspaces:** tades-workspace (MedTube v1), tadeass-workspace (MedTube 2)
+- **University:** University of Birmingham
+- **Augmented dataset size:** 7200 images (from 3000 base, 2.4× augmentation)
+
+### 19.12 University Context
+
+- **Institution:** University of Birmingham
+- **Programme:** MSc (Advanced Project, 2025–26 academic year)
+- **Supervisor meetings:** May, June, July 2026
+- **Ethics:** Ethical review signed; Risk assessment completed
+- **HPC access:** BlueBear (University HPC cluster) — login details available
+- **Impact statement:** Required per MSc guidelines
+
+### 19.13 Key Figures Available for Report
+
+| Source | File/Location | Description |
+| --- | --- | --- |
+| Conveyor-Belt project | `assets/figure2.png` | System architecture pipeline diagram |
+| Pictures | `yolo-(1).jpg` | YOLO architecture diagram |
+| Pictures | `Blood-collection-tubes-*.webp` | Medical tube reference image |
+| Pictures | `Medical_recycling.png` | Medical recycling motivation image |
+| Pictures | `crested-wm-full-colour-*.png` | University of Birmingham crest |
+| Screenshots | Various (2026-01 to 2026-07) | Full development timeline evidence |
+| MedTube runs | `results.png`, confusion matrices, PR curves | Training result plots |
+| MedTube runs | `val_batch*_pred.jpg` | Qualitative prediction examples |
+
+---
+
+## 20. Literature References for Report
+
+Curated list of peer-reviewed and closely relevant references only. BibTeX keys in brackets.
+
+### 20.1 YOLO Family — Object Detection & Segmentation
+
+1. **[redmon2016yolo]** Redmon, J., Divvala, S., Girshick, R. and Farhadi, A. (2016) 'You Only Look Once: Unified, Real-Time Object Detection', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 779–788. doi: 10.1109/CVPR.2016.91.
+
+2. **[jocher2023yolov8]** Jocher, G., Chaurasia, A. and Qiu, J. (2023) *Ultralytics YOLOv8* [Software], version 8.0.0. Available at: https://github.com/ultralytics/ultralytics (Accessed: 15 July 2026). *Note: No formal paper; cite as software per Ultralytics guidance.*
+
+3. **[wang2024yolov9]** Wang, C.-Y., Yeh, I.-H. and Liao, H.-Y.M. (2024) 'YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information', *Computer Vision — ECCV 2024*, Springer Nature Switzerland, pp. 1–21. arXiv: 2402.13616. **Peer-reviewed (ECCV).**
+
+4. **[jocher2024yolo11]** Jocher, G. and Qiu, J. (2024) *Ultralytics YOLO11* [Software], version 11.0.0. Available at: https://github.com/ultralytics/ultralytics (Accessed: 15 July 2026). *Note: No formal paper; cite as software per Ultralytics guidance.*
+
+5. **[bochkovskiy2020yolov4]** Bochkovskiy, A., Wang, C.-Y. and Liao, H.-Y.M. (2020) 'YOLOv4: Optimal Speed and Accuracy of Object Detection', arXiv preprint arXiv:2004.10934. *Relevant for mosaic augmentation strategy.*
+
+### 20.2 Detection Transformers (DETR Family)
+
+6. **[carion2020detr]** Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A. and Zagoruyko, S. (2020) 'End-to-End Object Detection with Transformers', *European Conference on Computer Vision (ECCV)*, Springer, pp. 213–229. arXiv: 2005.12872. **Peer-reviewed (ECCV).**
+
+7. **[zhu2021deformable]** Zhu, X., Su, W., Lu, L., Li, B., Wang, X. and Dai, J. (2021) 'Deformable DETR: Deformable Transformers for End-to-End Object Detection', *International Conference on Learning Representations (ICLR)*. arXiv: 2010.04159. **Peer-reviewed (ICLR).**
+
+8. **[lv2023rtdetr]** Lv, W., Xu, S., Zhao, Y., Wang, G., Wei, J., Cui, C., Du, Y., Dang, Q. and Liu, Y. (2023) 'DETRs Beat YOLOs on Real-time Object Detection', arXiv preprint arXiv:2304.08069. *Basis for RT-DETR architecture.*
+
+9. **[robicheaux2025rfdetr]** Robicheaux, P., Gallagher, J., Nelson, J. and Robinson, I. (2025) 'RF-DETR: Neural Architecture Search for Real-Time Detection Transformers', arXiv preprint arXiv:2511.09554. *RF-DETR model used in this project; uses DINOv2 backbone.*
+
+### 20.3 Instance Segmentation
+
+10. **[he2017maskrcnn]** He, K., Gkioxari, G., Dollár, P. and Girshick, R. (2017) 'Mask R-CNN', *Proceedings of the IEEE International Conference on Computer Vision (ICCV)*, pp. 2961–2969. arXiv: 1703.06870. **Peer-reviewed (ICCV).**
+
+11. **[bolya2019yolact]** Bolya, D., Zhou, C., Xiao, F. and Lee, Y.J. (2019) 'YOLACT: Real-time Instance Segmentation', *Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)*, pp. 9157–9166. arXiv: 1904.02689. **Peer-reviewed (ICCV).**
+
+### 20.4 Foundation Models for Annotation
+
+12. **[kirillov2023sam]** Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.-Y., Dollár, P. and Girshick, R. (2023) 'Segment Anything', *Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)*, pp. 4015–4026. arXiv: 2304.02643. **Peer-reviewed (ICCV).** *Used via Roboflow for SAM-assisted annotation.*
+
+13. **[oquab2024dinov2]** Oquab, M., Darcet, T., Moutakanni, T. et al. (2024) 'DINOv2: Learning Robust Visual Features without Supervision', *Transactions on Machine Learning Research (TMLR)*. arXiv: 2304.07193. **Peer-reviewed (TMLR).** *Backbone of RF-DETR.*
+
+### 20.5 Roboflow Platform & Benchmarking
+
+14. **[ciaglia2022rf100]** Ciaglia, F., Zuppichini, F.S., Guerrie, P., McQuade, M. and Solawetz, J. (2022) 'Roboflow 100: A Rich, Multi-Domain Object Detection Benchmark', arXiv preprint arXiv:2211.13523. *Introduces RF100 benchmark; 100 datasets, 7 domains, 224,714 images, 805 classes from Roboflow Universe. Used by Apple, Microsoft, Baidu for benchmarking.*
+
+### 20.6 Evaluation Metrics & Benchmarks
+
+15. **[lin2014coco]** Lin, T.-Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ramanan, D., Dollár, P. and Zitnick, C.L. (2014) 'Microsoft COCO: Common Objects in Context', *European Conference on Computer Vision (ECCV)*, Springer, pp. 740–755. arXiv: 1405.0312. **Peer-reviewed (ECCV).** *Defines mAP50 and mAP50-95 metrics used throughout this project.*
+
+16. **[padilla2020survey]** Padilla, R., Netto, S.L. and da Silva, E.A.B. (2020) 'A Survey on Performance Metrics for Object-Detection Algorithms', *2020 International Conference on Systems, Signals and Image Processing (IWSSIP)*, IEEE, pp. 237–242. **Peer-reviewed (IEEE).**
+
+### 20.7 Depth Sensors & Intel RealSense
+
+17. **[keselman2017realsense]** Keselman, L., Iselin Woodfill, J., Grunnet-Jepsen, A. and Bhowmik, A. (2017) 'Intel RealSense Stereoscopic Depth Cameras', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)*, pp. 1–10. doi: 10.1109/CVPRW.2017.167. **Peer-reviewed (CVPRW).** *Core reference for D415 camera used in this project.*
+
+18. **[giancola2018survey]** Giancola, S., Valenti, M. and Sala, R. (2018) 'A Survey on 3D Cameras: Metrological Comparison of Time-of-Flight, Structured-Light and Active Stereoscopy Technologies', *SpringerBriefs in Computer Science*, Springer. doi: 10.1007/978-3-319-91761-0. **Peer-reviewed (Springer).** *Compares ToF, structured light, and active stereo depth sensors including RealSense.*
+
+19. **[zanuttigh2016time]** Zanuttigh, P., Marin, G., Dal Mutto, C., Dominio, F., Minto, L. and Cortelazzo, G.M. (2016) *Time-of-Flight and Structured Light Depth Cameras: Technology and Applications*, Springer. doi: 10.1007/978-3-319-30973-6. **Peer-reviewed (Springer monograph).** *Comprehensive depth camera technology reference.*
+
+### 20.8 RGB-D / Depth in Object Detection & Classification
+
+20. **[eitel2015rgbd]** Eitel, A., Springenberg, J.T., Spinello, L., Riedmiller, M. and Burgard, W. (2015) 'Multimodal Deep Learning for Robust RGB-D Object Recognition', *Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)*, pp. 681–687. arXiv: 1507.06821. **Peer-reviewed (IROS).** *Two-stream CNN architecture for RGB + depth with late fusion — directly relevant to depth fusion approach considered in this project.*
+
+21. **[gupta2014learning]** Gupta, S., Girshick, R., Arbeláez, P. and Malik, J. (2014) 'Learning Rich Features from RGB-D Images for Object Detection and Segmentation', *European Conference on Computer Vision (ECCV)*, Springer, pp. 345–360. **Peer-reviewed (ECCV).** *Introduces HHA encoding (horizontal disparity, height above ground, angle) for converting depth maps to CNN-compatible 3-channel input.*
+
+22. **[qi2018frustum]** Qi, C.R., Liu, W., Wu, C., Su, H. and Guibas, L.J. (2018) 'Frustum PointNets for 3D Object Detection from RGB-D Data', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 918–927. arXiv: 1711.08488. **Peer-reviewed (CVPR).** *Combines 2D detection with 3D point cloud processing for RGB-D.*
+
+23. **[schwarz2015rgbd]** Schwarz, M., Schulz, H. and Behnke, S. (2015) 'RGB-D Object Recognition and Pose Estimation Based on Pre-trained Convolutional Neural Network Features', *2015 IEEE International Conference on Robotics and Automation (ICRA)*, pp. 1329–1335. **Peer-reviewed (ICRA).** *Transfer learning with depth for robotic object recognition.*
+
+24. **[song2015sunrgbd]** Song, S., Lichtenberg, S.P. and Xiao, J. (2015) 'SUN RGB-D: A RGB-D Scene Understanding Benchmark Suite', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 567–576. **Peer-reviewed (CVPR).** *Major RGB-D dataset and benchmark for scene understanding.*
+
+25. **[ren2015fasterrcnn]** Ren, S., He, K., Girshick, R. and Sun, J. (2015) 'Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks', *Advances in Neural Information Processing Systems (NeurIPS)*, 28, pp. 91–99. arXiv: 1506.01497. **Peer-reviewed (NeurIPS).** *Foundational two-stage detector; precursor to Mask R-CNN.*
+
+### 20.9 Transfer Learning & Data Augmentation
+
+26. **[shorten2019augmentation]** Shorten, C. and Khoshgoftaar, T.M. (2019) 'A Survey on Image Data Augmentation for Deep Learning', *Journal of Big Data*, 6(1), pp. 1–48. doi: 10.1186/s40537-019-0197-0. **Peer-reviewed (Springer).** *Covers mosaic, copy-paste, colour jitter, erasing — all used in this project.*
+
+27. **[he2016resnet]** He, K., Zhang, X., Ren, S. and Sun, J. (2016) 'Deep Residual Learning for Image Recognition', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 770–778. **Peer-reviewed (CVPR).** *Backbone architecture used in YOLO and DETR models.*
+
+28. **[lin2017fpn]** Lin, T.-Y., Dollár, P., Girshick, R., He, K., Hariharan, B. and Belongie, S. (2017) 'Feature Pyramid Networks for Object Detection', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 2117–2125. **Peer-reviewed (CVPR).** *Multi-scale feature extraction neck architecture used in YOLO models.*
+
+### 20.10 Medical Waste, Plastic & Circular Economy
+
+29. **[who2024healthcare]** World Health Organization (2024) *Health-Care Waste*. Fact Sheet, 24 October. Available at: https://www.who.int/news-room/fact-sheets/detail/health-care-waste (Accessed: 15 July 2026). *Key statistics: 85% non-hazardous / 15% hazardous; high-income countries generate 0.5 kg hazardous waste per hospital bed per day; 16 billion injections administered worldwide annually.*
+
+30. **[windfeld2015medical]** Windfeld, E.S. and Brooks, M.S.-L. (2015) 'Medical Waste Management — A Review', *Journal of Environmental Management*, 163, pp. 98–108. doi: 10.1016/j.jenvman.2015.08.013. **Peer-reviewed (Elsevier).**
+
+31. **[chartier2014safe]** Chartier, Y., Emmanuel, J., Pieper, U. et al. (eds.) (2014) *Safe Management of Wastes from Health-care Activities*, 2nd edn. Geneva: World Health Organization. **WHO technical guidance document.**
+
+32. **[nhs2022netzero]** NHS England (2022) *Delivering a Net Zero National Health Service*. Available at: https://www.england.nhs.uk/greenernhs/a-net-zero-nhs/ (Accessed: 15 July 2026). *NHS net zero targets: 2040 for direct emissions, 2045 for supply chain. Direct emissions down 68% since 1990.*
+
+33. **[pgh2024waste]** Practice Greenhealth (2024) *Health Care Waste*. Available at: https://practicegreenhealth.org/topics/waste/waste-0 (Accessed: 15 July 2026). *US hospitals produce over 5 million tonnes of waste per year; 29 pounds per bed per day.*
+
+34. **[rizan2021environmental]** Rizan, C., Reed, M. and Bhutta, M.F. (2021) 'Environmental Impact of Personal Protective Equipment Distributed for Use by Health and Social Care Services in England in the First Six Months of the COVID-19 Pandemic', *Journal of the Royal Society of Medicine*, 114(5), pp. 250–263. doi: 10.1177/01410768211001583. **Peer-reviewed (JRSM).** *Quantifies plastic waste surge from PPE during COVID-19.*
+
+35. **[klemes2020energy]** Klemeš, J.J., Fan, Y.V., Tan, R.R. and Jiang, P. (2020) 'Minimising the Present and Future Plastic Waste, Energy and Environmental Footprints Related to COVID-19', *Renewable and Sustainable Energy Reviews*, 127, p. 109883. doi: 10.1016/j.rser.2020.109883. **Peer-reviewed (Elsevier).** *Single-use medical plastics environmental footprint analysis.*
+
+36. **[lee2023medical]** Lee, B.K., Ellenbecker, M.J. and Moure-Eraso, R. (2004) 'Analyses of the Recycling Potential of Medical Plastic Wastes', *Waste Management*, 24(10), pp. 991–998. doi: 10.1016/j.wasman.2004.07.006. **Peer-reviewed (Elsevier).** *Direct relevance: analyses which medical plastics (PP, PS, PE) can be recycled and at what rates; polypropylene tubes are 70–80% recyclable.*
+
+### 20.11 Deep Learning Frameworks & Tools
+
+37. **[paszke2019pytorch]** Paszke, A., Gross, S., Massa, F. et al. (2019) 'PyTorch: An Imperative Style, High-Performance Deep Learning Library', *Advances in Neural Information Processing Systems (NeurIPS)*, 32, pp. 8026–8037. **Peer-reviewed (NeurIPS).**
+
+### 20.12 Papers Already Collected (in Papers/ folder — titles TBC)
+
+38. **sensors-20-03816.pdf** — MDPI Sensors, 2020 (doi: 10.3390/s20133816). **Peer-reviewed.**
+39. **sensors-21-01213.pdf** — MDPI Sensors, 2021 (doi: 10.3390/s21041213). **Peer-reviewed.**
+40. **s41598-023-45759-z.pdf** — Nature Scientific Reports, 2023. **Peer-reviewed.**
+41. **e3sconf_icfee2024_04001.pdf** — E3S Web of Conferences, ICFEE 2024. **Conference proceedings.**
+42. **3093-4155-1-PB.pdf** — Title TBC (needs extraction from PDF).
+
+### 20.13 Key Statistics for Introduction/Motivation
+
+| Statistic | Value | Source |
+| --- | --- | --- |
+| Global healthcare waste (non-hazardous share) | 85% | WHO (2024) |
+| Hazardous waste per bed per day (high-income) | 0.5 kg | WHO (2024) |
+| US hospital waste per year | >5 million tonnes | Practice Greenhealth (2024) |
+| US hospital waste per bed per day | 29 pounds (~13 kg) | Practice Greenhealth (2024) |
+| Global injections per year | 16 billion | WHO (2024) |
+| NHS direct emissions reduction since 1990 | 68% | NHS England (2022) |
+| NHS net zero target (direct) | 2040 | NHS England (2022) |
+| NHS net zero target (supply chain) | 2045 | NHS England (2022) |
+| Polypropylene recyclability rate | 70–80% | Lee et al. (2004) |
+| COVID-19 PPE waste (England, 6 months) | >27,000 tonnes | Rizan et al. (2021) |

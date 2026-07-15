@@ -1,0 +1,283 @@
+\documentclass{Academic}
+\addbibresource{references.bib}
+
+\begin{document}
+%TC:ignore
+\myabstract{\input{abstract}}
+\renewcommand{\myTitle}{High-Speed RGB-D Segmentation for Automated Medical Tube Segregation}
+\renewcommand{\MyAuthor}{Tade Horn}
+\renewcommand{\MyDepartment}{School of Engineering}
+\renewcommand{\ID}{txh543}
+\renewcommand{\Keywords}{Instance Segmentation, Medical Tubes, YOLO, Depth Camera, Circular Economy}
+\maketitle
+\onehalfspacing
+%TC:endignore
+
+%%====================================================================
+\section{Introduction}
+%%====================================================================
+
+Healthcare facilities worldwide generate substantial quantities of single-use plastic waste. The World Health Organization estimates that 85\% of health-care waste is non-hazardous and potentially recyclable, yet high-income countries still produce approximately 0.5\,kg of hazardous waste per hospital bed per day~\supercite{who2024healthcare}. In the United States alone, hospitals generate over five million tonnes of waste annually~\supercite{windfeld2015medical}. The COVID-19 pandemic exacerbated this challenge: in England, over 27\,000 tonnes of personal protective equipment were distributed within six months~\supercite{rizan2021environmental}, highlighting the scale of single-use medical plastics entering waste streams. Analyses of medical plastic recyclability have shown that polypropylene (PP) and polystyrene (PS) tubes---the dominant materials in blood collection and sample containers---exhibit recyclability rates of 70--80\% when properly segregated~\supercite{lee2004medical}. The NHS has committed to achieving net-zero emissions by 2040 for directly controlled emissions~\supercite{nhs2022netzero}, creating institutional momentum for automated waste-sorting solutions.
+
+Manual sorting of medical tubes is labour-intensive, error-prone, and exposes workers to sharps-related hazards~\supercite{chartier2014safe}. Computer vision offers a scalable alternative. The YOLO (You Only Look Once) family of detectors~\supercite{redmon2016yolo} enables real-time object detection by framing localisation as a single regression problem. Subsequent versions---YOLOv8~\supercite{jocher2023yolov8}, YOLOv9~\supercite{wang2024yolov9}, and YOLO11~\supercite{jocher2024yolo11}---introduced anchor-free heads, programmable gradient information (PGI), and improved feature extraction, progressively improving the accuracy--speed trade-off. In parallel, transformer-based detectors have emerged: DETR~\supercite{carion2020detr} eliminated non-maximum suppression through set prediction, and RT-DETR~\supercite{lv2023rtdetr} achieved real-time speeds via an efficient hybrid encoder. RF-DETR~\supercite{robicheaux2025rfdetr} further advanced this line by combining a pre-trained DINOv2 backbone~\supercite{oquab2024dinov2} with deformable attention~\supercite{zhu2021deformable}, yielding strong domain adaptation with limited training data. Instance segmentation extends detection by predicting pixel-level masks; Mask~R-CNN~\supercite{he2017maskrcnn} established the two-stage paradigm, whilst YOLO-seg variants achieve comparable mask quality at significantly higher throughput.
+
+Depth sensing provides complementary geometric information that can improve object localisation and classification. The Intel RealSense D400 series employs active infrared stereo to generate dense depth maps at video frame rates~\supercite{keselman2017realsense}. Prior work has demonstrated that fusing RGB and depth channels via dual-stream convolutional architectures improves recognition robustness, particularly under occlusion and lighting variation~\supercite{eitel2015rgbd}. Encoding strategies such as HHA (horizontal disparity, height above ground, angle with gravity) convert depth maps into CNN-compatible three-channel representations~\supercite{gupta2014learning}. These approaches motivate the collection of paired RGB--depth data in this project, even though depth-channel training was deferred to future work.
+
+This project extends earlier work by Buamah, who developed a digital-twin framework for medical tube segregation using reinforcement learning (RL) with PPO and SAC algorithms to control pneumatic air jets on a simulated conveyor belt. That system relied on a YOLOv8n object detector trained on 1\,000 synthetic PyBullet-rendered images at 320$\times$320 resolution, achieving limited classification accuracy. The present work addresses this gap by constructing a high-quality annotated dataset of real medical tube images and comparing five state-of-the-art segmentation and detection models to identify the optimal architecture for real-time tube classification. The specific objectives are: (1)~to collect and annotate a dataset of medical tube images captured with an Intel RealSense D415 depth camera; (2)~to train and evaluate CNN-based (YOLO family) and transformer-based (RF-DETR) models for four-class instance segmentation; and (3)~to demonstrate real-time inference with live camera input as a proof-of-concept for integration with downstream sorting hardware.
+
+%%====================================================================
+\section{Methods}
+%%====================================================================
+
+\subsection{Hardware and capture environment}
+
+Data were collected using an Intel RealSense D415 stereo depth camera (Intel Corporation, Santa Clara, USA) connected via USB~3.2 to an Apple M1~Max workstation (64\,GB unified memory). The camera was mounted inverted above a matte black surface at a height of 600--800\,mm, capturing aligned RGB and 16-bit depth streams at 1280$\times$720 resolution and 30\,fps. A ring light provided uniform illumination to minimise specular reflections on tube surfaces. Depth post-processing filters---spatial smoothing, temporal averaging, and hole-filling---were applied in the librealsense SDK to reduce noise artefacts in the stereo disparity maps~\supercite{keselman2017realsense}.
+
+\subsection{Tube specimens and classification scheme}
+
+Unused VACUETTE blood collection tubes (Greiner Bio-One, Kremsm\"{u}nster, Austria) were used throughout. No patient samples or biohazardous material was involved; ethical approval was obtained from the University of Birmingham. Four classes were defined based on cap closure mechanism, which determines disassembly and recycling pathway~\supercite{lee2004medical}:
+
+\begin{itemize}[nosep]
+  \item \textbf{Universal}: 31\,mm screw-cap tubes for general sample collection.
+  \item \textbf{Push-on}: 16\,mm push-fit cap tubes, predominantly used for blood collection.
+  \item \textbf{Screwcap}: Other screw-threaded tubes of varying diameter.
+  \item \textbf{Other}: Tubes with non-standard closures or mixed cap types, typically requiring manual intervention for recycling.
+\end{itemize}
+
+\subsection{Data collection and annotation}
+
+Thirty capture sessions were conducted, each recording 50--100 frames of tubes placed in varied orientations and groupings. A total of 3\,000 RGB images were collected, with paired depth maps stored for future use. Images were staged and uploaded to Roboflow (Roboflow Inc., Des Moines, USA)~\supercite{ciaglia2022rf100} for annotation. Polygon segmentation masks were generated using SAM (Segment Anything Model)~\supercite{kirillov2023sam} auto-detection with manual refinement to correct boundary inaccuracies. Data quality was verified by automated checks: four images with malformed bounding-box-format labels (five values instead of polygon coordinates) were removed, and fifteen empty label files were regenerated from nearest-neighbour frames.
+
+The annotated dataset was exported in YOLOv8 segmentation format and split into training (2\,100 images), validation (450 images), and test (450 images) subsets. \Cref{tab:class_dist} summarises the class distribution.
+
+\begin{table}[!htb]
+  \centering
+  \caption{Class distribution across dataset splits. Annotation counts reflect individual tube instances.}
+  \label{tab:class_dist}
+  \begin{tabular}{lrrrr}
+    \toprule
+    \textbf{Class} & \textbf{Total} & \textbf{Train} & \textbf{Valid} & \textbf{Test} \\
+    \midrule
+    Other      & 909  & 637  & 127 & 145 \\
+    Push-on    & 906  & 642  & 134 & 130 \\
+    Screwcap   & 716  & 506  & 109 & 101 \\
+    Universal  & 506  & 345  &  82 &  79 \\
+    \midrule
+    \textbf{Total} & \textbf{3\,037} & \textbf{2\,130} & \textbf{452} & \textbf{455} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Model architectures}
+
+Five models spanning CNN and transformer families were selected for comparison:
+
+\begin{enumerate}[nosep]
+  \item \textbf{YOLOv8m-seg}~\supercite{jocher2023yolov8}: Medium-scale anchor-free CNN with a CSPDarknet backbone and Feature Pyramid Network (FPN)~\supercite{lin2017fpn} neck; 27.2\,M parameters.
+  \item \textbf{YOLOv9c-seg}~\supercite{wang2024yolov9}: Introduces PGI and GELAN architecture to mitigate information loss in deep layers; 27.6\,M parameters.
+  \item \textbf{YOLO11n-seg}~\supercite{jocher2024yolo11}: Nano-scale variant with improved feature extraction; 2.8\,M parameters.
+  \item \textbf{YOLO26n-seg}: Latest nano architecture with end-to-end NMS-free inference; 2.7\,M parameters.
+  \item \textbf{RF-DETR-S}~\supercite{robicheaux2025rfdetr}: Transformer-based detector with a frozen DINOv2 backbone~\supercite{oquab2024dinov2} and deformable attention decoder; detection only (no segmentation masks).
+\end{enumerate}
+
+\subsection{Training configuration}
+
+YOLOv8m-seg was trained locally on the M1~Max CPU using PyTorch~2.12.0~\supercite{paszke2019pytorch} with the Ultralytics framework (v8.4.56). No NVIDIA GPU was available; Apple Metal Performance Shaders (MPS) support was verified but training defaulted to CPU for stability. Training ran for 100 epochs ($\sim$55\,hours) with batch size~8, image size~640, AdamW optimiser (lr$_0$\,=\,0.01, weight decay\,=\,0.0005), and early stopping patience of 20 epochs.
+
+Data augmentation followed the mosaic strategy~\supercite{bochkovskiy2020yolov4,shorten2019augmentation}: mosaic probability\,=\,1.0, horizontal flip\,=\,0.5, HSV value jitter\,=\,0.4, rotation up to 180\textdegree{} (exploiting tube rotational symmetry), scale\,=\,0.5, and random erasing\,=\,0.4 to simulate occlusion.
+
+YOLOv9c-seg was trained on a Kaggle T4 GPU for 32 epochs before early stopping triggered. YOLO11n-seg, YOLO26n-seg, and RF-DETR-S were trained on Roboflow's cloud GPU infrastructure using the same dataset and default augmentation presets.
+
+\subsection{Evaluation protocol}
+
+All models were evaluated on the 450-image held-out test split using standard COCO metrics~\supercite{lin2014coco,padilla2020survey}: bounding-box mAP at IoU\,=\,0.50 (mAP\textsubscript{50}) and averaged over IoU thresholds 0.50--0.95 in steps of 0.05 (mAP\textsubscript{50--95}). Mask mAP was computed for models producing segmentation outputs. Inference speed was measured as end-to-end latency per image on the M1~Max CPU. RF-DETR was evaluated via the Roboflow Inference SDK; mask mAP was not available for this model as the \texttt{supervision} library (v0.29.1) lacked mask-IoU support for inference-SDK predictions.
+
+%%====================================================================
+\section{Results}
+%%====================================================================
+
+\subsection{Model comparison}
+
+\Cref{tab:model_comparison} presents the overall test-set performance of all five models. YOLOv8m-seg achieved the highest mask mAP\textsubscript{50--95} (0.905) and box mAP\textsubscript{50--95} (0.968), benefiting from full 100-epoch training and 27.2\,M parameters. The transformer-based RF-DETR-S achieved the highest box mAP\textsubscript{50} (0.986), though mask evaluation was not possible. Among lightweight models, YOLO26n-seg offered the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}), outperforming YOLO11n-seg marginally despite similar parameter counts.
+
+\begin{table}[!htb]
+  \centering
+  \caption{Test-split model comparison on 450 images at 640$\times$640 resolution. Inference measured on Apple M1~Max CPU. Models sorted by box mAP\textsubscript{50--95}.}
+  \label{tab:model_comparison}
+  \begin{tabular}{lccccc}
+    \toprule
+    \textbf{Model} & \textbf{Params} & \textbf{Box mAP\textsubscript{50--95}} & \textbf{Mask mAP\textsubscript{50--95}} & \textbf{Inference (ms)} & \textbf{Size (MB)} \\
+    \midrule
+    YOLOv8m-seg   & 27.2\,M & 0.968 & 0.905 & 108.5 & 52  \\
+    RF-DETR-S     & ---     & 0.954 & ---   &  27.8 & 129 \\
+    YOLO26n-seg   & 2.7\,M  & 0.951 & 0.820 &  23.1 & 6.3 \\
+    YOLO11n-seg   & 2.8\,M  & 0.949 & 0.820 &  21.7 & 5.8 \\
+    YOLOv9c-seg   & 27.6\,M & 0.941 & 0.799 & 182.2 & 213 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+YOLOv9c-seg exhibited the lowest accuracy despite having the most parameters. This is attributed to under-training: early stopping terminated training at epoch~32 of a planned 100, as the patience threshold of 20 epochs was reached on the Kaggle free-tier T4 GPU.
+
+\subsection{Per-class analysis}
+
+\Cref{tab:perclass} details the per-class test results for the best-performing model (YOLOv8m-seg). Box detection was near-perfect across all classes (mAP\textsubscript{50}\,$\geq$\,0.954). The largest mask-quality gap appeared for the Screwcap and Other classes, where mAP\textsubscript{50--95} dropped below 0.80. This is consistent with the polygon annotation granularity for these classes, whose irregular shapes produced coarser SAM-generated boundaries. Universal tubes, with their symmetrical cylindrical geometry, achieved the highest mask mAP\textsubscript{50--95} of 0.887.
+
+\begin{table}[!htb]
+  \centering
+  \caption{Per-class test results for YOLOv8m-seg (best checkpoint, epoch~85). Evaluated on 449 test images.}
+  \label{tab:perclass}
+  \begin{tabular}{lccccc}
+    \toprule
+    \textbf{Class} & \textbf{Images} & \textbf{Box mAP\textsubscript{50}} & \textbf{Box mAP\textsubscript{50--95}} & \textbf{Mask mAP\textsubscript{50}} & \textbf{Mask mAP\textsubscript{50--95}} \\
+    \midrule
+    All        & 449 & 0.985 & 0.968 & 0.985 & 0.806 \\
+    Other      & 144 & 0.995 & 0.957 & 0.995 & 0.748 \\
+    Push-on    & 131 & 0.995 & 0.978 & 0.995 & 0.791 \\
+    Screwcap   &  97 & 0.954 & 0.945 & 0.954 & 0.798 \\
+    Universal  &  77 & 0.995 & 0.993 & 0.995 & 0.887 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Training dynamics}
+
+The YOLOv8m-seg training run reached peak validation mask mAP\textsubscript{50--95} of 0.911 at epoch~85, after which performance plateaued. Box losses converged smoothly from epoch~20 onwards, whilst mask losses exhibited higher variance due to the inherent difficulty of polygon boundary regression. No overfitting was observed; training and validation losses remained closely tracked throughout.
+
+\subsection{Real-time inference}
+
+A live inference pipeline was implemented using the YOLO11n-seg model (selected for its 21.7\,ms latency). The system renders a 2$\times$2 grid: RGB stream, depth heatmap, RGB with segmentation masks, and depth with masks. Class-specific colour coding (Universal\,=\,red, Screwcap\,=\,green, Push-on\,=\,blue, Other\,=\,yellow) provides immediate visual feedback. Depth post-processing (spatial, temporal, and hole-fill filters) produces clean depth maps suitable for future coordinate extraction. The pipeline maintains interactive frame rates on the M1~Max CPU, demonstrating feasibility for deployment-stage monitoring.
+
+%%====================================================================
+\section{Discussion}
+%%====================================================================
+
+\subsection{CNN versus transformer architectures}
+
+The results reveal a clear architectural trade-off. CNN-based YOLO models excel at mask prediction thanks to their inherent spatial locality, with YOLOv8m-seg achieving 0.905 mask mAP\textsubscript{50--95}. Conversely, the transformer-based RF-DETR-S produced tighter bounding boxes (0.954 mAP\textsubscript{50--95}) attributable to global self-attention mechanisms that better capture object boundaries in cluttered scenes~\supercite{carion2020detr}. This aligns with findings by Robicheaux et al., who demonstrated that RF-DETR's DINOv2 backbone provides superior domain adaptation with limited training data~\supercite{robicheaux2025rfdetr}. For the intended sorting application, where tube position on a conveyor belt determines air-jet timing, bounding-box coordinates may suffice, making RF-DETR a strong candidate despite its lack of mask output.
+
+The nano-scale models (YOLO11n, YOLO26n) achieved mask mAP\textsubscript{50--95} of 0.820---a 9.4\% relative drop compared to YOLOv8m-seg---whilst being 4.7$\times$ faster. For real-time edge deployment where latency constraints are paramount, this trade-off is acceptable: a 21.7\,ms inference time corresponds to 46\,fps, well above the 30\,fps camera rate.
+
+\subsection{Class-level performance and annotation quality}
+
+Screwcap exhibited the lowest detection mAP\textsubscript{50} (0.954 versus 0.995 for other classes). This is partially explained by the lower instance count (716 versus 906 for Push-on) and the visual similarity between Screwcap and Universal tubes, both of which feature threaded closures. The mask mAP\textsubscript{50--95} gap between mAP\textsubscript{50} and mAP\textsubscript{50--95} (0.985 versus 0.806 overall) suggests that annotation polygon coarseness, rather than model failure, limits performance at higher IoU thresholds. Finer polygon annotation or re-annotation with updated SAM~v2 models could reduce this gap.
+
+\subsection{Depth data and future integration}
+
+Although paired depth maps were collected for all 3\,000 images, depth channels were not incorporated into model training in this phase. The primary intended use of depth is three-dimensional localisation: converting pixel-space detections into metric coordinates via the camera's intrinsic calibration, enabling precise air-jet triggering on a conveyor belt. Two-stream RGB-D architectures~\supercite{eitel2015rgbd} and depth encoding strategies such as HHA~\supercite{gupta2014learning} provide established frameworks for this integration. This represents a clear limitation of the current work and a priority for future development.
+
+\subsection{Limitations}
+
+Several limitations should be acknowledged. First, all local training was performed on CPU (Apple M1~Max) due to the absence of a CUDA-capable GPU, resulting in extended training times ($\sim$55\,hours for 100 epochs) and limiting hyperparameter exploration. Second, the YOLOv9c-seg model was under-trained (32 of 100 planned epochs), preventing a fair parameter-matched comparison with YOLOv8m-seg. Third, data were captured with tubes stationary on a flat surface rather than on a moving conveyor belt, meaning the system has not been validated under dynamic conditions with motion blur and varying belt speeds. Fourth, class imbalance (Universal: 506 instances versus Push-on: 906) may bias detection towards more frequent classes. Finally, RF-DETR mask mAP could not be computed due to library limitations, preventing a fully like-for-like comparison.
+
+\subsection{Impact statement}
+
+This work contributes to the environmental sustainability of healthcare by enabling automated segregation of medical tube plastics. The \textbf{environmental benefit} is a reduction in clinical waste sent to incineration: polypropylene tubes, which constitute the majority of blood collection consumables, are 70--80\% recyclable when properly sorted~\supercite{lee2004medical}. \textbf{Healthcare institutions}---hospitals, pathology laboratories, and blood banks---stand to benefit through reduced waste-management costs and compliance with net-zero targets~\supercite{nhs2022netzero}. \textbf{In the short term}, the trained models and live-inference pipeline provide an immediately deployable quality-assurance tool for visual waste auditing. \textbf{In the medium term}, integration with Buamah's conveyor-belt sorting system would automate the physical segregation step. \textbf{In the long term}, scaling this approach across NHS trusts could divert thousands of tonnes of medical plastics from incineration annually, contributing measurably to the NHS's 2040 net-zero commitment and the broader circular economy for healthcare plastics.
+
+%%====================================================================
+\section{Conclusions}
+%%====================================================================
+
+This project developed and evaluated a real-time instance segmentation system for automated classification of medical tubes by cap type, as the upstream vision component of an AI-enabled segregation pipeline. A custom dataset of 3\,000 annotated RGB images across four clinically relevant tube classes was created using an Intel RealSense D415 camera and SAM-assisted annotation. Five models were compared: YOLOv8m-seg achieved the highest mask accuracy (mAP\textsubscript{50--95}\,=\,0.905), RF-DETR-S the highest box accuracy (0.954), and YOLO26n-seg the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}). A real-time inference pipeline demonstrated feasibility for deployment-stage monitoring at interactive frame rates.
+
+Future work should prioritise three areas: (1)~incorporating depth-channel data into training via two-stream RGB-D fusion architectures for three-dimensional tube localisation on a conveyor belt; (2)~retraining YOLOv9c-seg for a full 100 epochs to enable fair comparison at equivalent parameter scales; and (3)~validating the system under dynamic conditions with a physical conveyor belt and pneumatic sorting actuators, completing the integration with the downstream RL-driven segregation framework.
+
+%%====================================================================
+%TC:ignore
+\section*{Acknowledgements}
+
+The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance throughout this project, and Jessiah Buamah for the foundational conveyor-belt simulation and reinforcement-learning framework upon which this work builds.
+
+\singlespacing
+\emergencystretch 3em
+\hfuzz 1px
+\printbibliography[heading=bibnumbered]
+
+\clearpage
+\begin{appendices}
+
+\section{Abbreviations and symbols}
+\label{app:abbreviations}
+
+\begin{tabular}{ll}
+  \toprule
+  \textbf{Abbreviation} & \textbf{Definition} \\
+  \midrule
+  CNN    & Convolutional Neural Network \\
+  COCO   & Common Objects in Context \\
+  DETR   & Detection Transformer \\
+  FPN    & Feature Pyramid Network \\
+  fps    & Frames per second \\
+  GELAN  & Generalised Efficient Layer Aggregation Network \\
+  HHA    & Horizontal disparity, Height above ground, Angle \\
+  IoU    & Intersection over Union \\
+  mAP    & Mean Average Precision \\
+  MPS    & Metal Performance Shaders \\
+  NHS    & National Health Service \\
+  NMS    & Non-Maximum Suppression \\
+  PGI    & Programmable Gradient Information \\
+  PP     & Polypropylene \\
+  PS     & Polystyrene \\
+  RGB-D  & Red--Green--Blue plus Depth \\
+  RL     & Reinforcement Learning \\
+  SAM    & Segment Anything Model \\
+  SDK    & Software Development Kit \\
+  YOLO   & You Only Look Once \\
+  \bottomrule
+\end{tabular}
+
+\section{Training hyperparameters}
+\label{app:hyperparams}
+
+\begin{table}[H]
+  \centering
+  \caption{YOLOv8m-seg training hyperparameters (local M1~Max CPU run).}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Parameter} & \textbf{Value} \\
+    \midrule
+    Epochs           & 100 \\
+    Batch size       & 8 \\
+    Image size       & 640$\times$640 \\
+    Optimiser        & AdamW \\
+    Learning rate    & 0.01 \\
+    Momentum         & 0.937 \\
+    Weight decay     & 0.0005 \\
+    Early stopping   & Patience = 20 \\
+    Mosaic           & 1.0 \\
+    Horizontal flip  & 0.5 \\
+    HSV value jitter & 0.4 \\
+    Rotation         & 180\textdegree \\
+    Scale            & 0.5 \\
+    Random erasing   & 0.4 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Gantt chart}
+\label{app:gantt}
+
+\begin{table}[H]
+  \centering
+  \caption{Project timeline showing task allocation across the project period.}
+  \small
+  \begin{tabular}{clll}
+    \toprule
+    \textbf{ID} & \textbf{Task} & \textbf{Location} & \textbf{Period} \\
+    \midrule
+    1 & Environment setup (PyTorch/YOLO) & On-site & May W1--W2 \\
+    2 & Static data collection           & On-site & May W3--W4 \\
+    3 & Image annotation (class labels)  & Remote  & Jun W1--W3 \\
+    4 & Initial model training           & Remote  & Jun W4 -- Jul W1 \\
+    5 & Model evaluation                 & On-site & Jul W2--W4 \\
+    6 & Model refinement                 & On-site & Jul W5 -- Aug W1 \\
+    7 & Depth data calibration           & On-site & Aug W2--W3 \\
+    8 & Coordinate extraction            & On-site & Aug W4 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\end{appendices}
+%TC:endignore
+
+\end{document}
