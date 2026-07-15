@@ -12,6 +12,12 @@ import os
 import json
 from pathlib import Path
 
+# Force CPU-only execution — prevents torch.cuda.stream crash on Apple Silicon MPS
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CORE_MODEL_GAZE_ENABLED"] = "False"
+os.environ["CORE_MODEL_SAM_ENABLED"] = "False"
+os.environ["CORE_MODEL_SAM3_ENABLED"] = "False"
+
 import cv2
 import numpy as np
 import supervision as sv
