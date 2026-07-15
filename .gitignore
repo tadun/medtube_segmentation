@@ -17,22 +17,24 @@ dataset/
 annotation/
 annotations/
 
-# Downloaded Roboflow export
+# Downloaded Roboflow exports (all variants)
 MedTube Segmentation.yolov8/
+MedTube.yolov8/
+MedTube-2.yolov8/
+MedTube.coco/
+data/
+data_coco/
 
-# Local training outputs
+# Training runs output (large)
 runs/
+Ultralytics/
+YOLOv9c-seg/
 
-# Local downloaded model weights
+# Pretrained / downloaded model weights at root
 *.pt
 
-# Local external dependency checkout
-librealsense/
-
-# Ultralytics / matplotlib runtime caches
-.ultralytics/
-.matplotlib/
-Ultralytics/
+# Weights kept under weights/ are committed selectively
+!weights/*.pt
 
 # macOS
 .DS_Store
