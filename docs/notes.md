@@ -426,11 +426,11 @@ All YOLO models evaluated with `model.val()` on the held-out test split of `MedT
 
 | Model | Weights file | Size | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | CPU inference |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| YOLOv8m-seg | `runs/.../YOLOv8-seg/weights/best.pt` | 52 MB | 27.2 M | 104.3 | **0.985** | **0.968** | **0.985** | **0.905** | 108.5 ms |
-| YOLO26n-seg | `yolo26n.pt` | 6.3 MB | 2.7 M | 9.0 | 0.983 | 0.951 | 0.983 | 0.820 | 23.1 ms |
+| YOLOv8m-seg | `runs/.../YOLOv8-seg/weights/best.pt` | 52 MB | 27.2 M | 104.3 | 0.985 | 0.968 | **0.985** | **0.905** | 108.5 ms |
+| RF-DETR-S | Roboflow API (`medtube-2/1`) | 129 MB | — | — | **0.986** | **0.954** | — | — | 27.7 ms |
+| YOLO26n-seg | `yolo26n.pt` | 6.3 MB | 2.7 M | 9.0 | 0.983 | 0.951 | 0.983 | 0.820 | **23.1 ms** |
 | YOLO11n-seg | `yolo11n_weights.pt` | 5.8 MB | 2.8 M | 9.6 | 0.983 | 0.949 | 0.983 | 0.820 | 21.7 ms |
 | YOLOv9c-seg | `YOLOv9c-seg/weights/best.pt` | 213 MB | 27.6 M | 147.6 | 0.983 | 0.941 | 0.983 | 0.799 | 182.2 ms |
-| RF-DETR-S | Roboflow cloud (API) | 129 MB | — | — | — | — | — | — | — |
 
 RF-DETR row to be filled in after running `notebooks/eval_rfdetr.py` with `ROBOFLOW_API_KEY` set.
 
