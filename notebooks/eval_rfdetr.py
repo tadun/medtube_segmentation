@@ -10,13 +10,22 @@ Requires:
 
 import os
 import json
+import contextlib
 from pathlib import Path
 
-# Force CPU-only execution — prevents torch.cuda.stream crash on Apple Silicon MPS
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["CORE_MODEL_GAZE_ENABLED"] = "False"
-os.environ["CORE_MODEL_SAM_ENABLED"] = "False"
-os.environ["CORE_MODEL_SAM3_ENABLED"] = "False"
+# Suppress noisy warnings
+os.environ["CORE_MODEL_GAZE_ENABLED"]  = "False"
+os.environ["CORE_MODEL_SAM_ENABLED"]   = "False"
+os.environ["CORE_MODEL_SAM3_ENABLED"]  = "False"
+
+# Monkey-patch torch.cuda.stream to a no-op on Apple Silicon (MPS has no current_device).
+# Must happen before inference SDK is imported.
+import torch
+if not torch.cuda.is_available():
+    @contextlib.contextmanager
+    def _noop_stream(stream):  # noqa: ANN001
+        yield
+    torch.cuda.stream = _noop_stream  # type: ignore[assignment]
 
 import cv2
 import numpy as np
