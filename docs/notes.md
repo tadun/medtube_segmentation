@@ -420,16 +420,19 @@ Note: RF-DETR uses 384×384 because that is its recommended optimum (Roboflow gu
 
 ## 17. Full Model Comparison — All YOLO Variants (2026-07-15)
 
-### 17.1 Test-Split Benchmark Summary (449 images, split='test', imgsz=640, batch=8, CPU)
+### 17.1 Test-Split Benchmark Summary — MedTube 2 dataset (450 images, split='test', imgsz=640, batch=8, CPU)
 
-All models evaluated with `model.val()` on the held-out test split. Results sorted by Mask mAP50-95.
+All YOLO models evaluated with `model.val()` on the held-out test split of `MedTube 2.yolov8`. Results sorted by Mask mAP50-95.
 
 | Model | Weights file | Size | Params | GFLOPs | Box mAP50 | Box mAP50-95 | Mask mAP50 | Mask mAP50-95 | CPU inference |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| YOLOv8m-seg | `runs/.../YOLOv8-seg/weights/best.pt` | 52 MB | 27.2 M | 104.3 | **0.985** | **0.968** | **0.985** | **0.906** | 107 ms |
-| YOLO26n-seg | `yolo26n.pt` | 6.3 MB | 2.7 M | 9.0 | 0.983 | 0.951 | 0.983 | 0.820 | **22.7 ms** |
-| YOLO11n-seg | `yolo11n_weights.pt` | 5.8 MB | 2.8 M | 9.6 | 0.983 | 0.950 | 0.983 | 0.819 | 23.5 ms |
-| YOLOv9c-seg | `YOLOv9c-seg/weights/best.pt` | 213 MB | 27.6 M | 147.6 | 0.983 | 0.941 | 0.983 | 0.799 | 162 ms |
+| YOLOv8m-seg | `runs/.../YOLOv8-seg/weights/best.pt` | 52 MB | 27.2 M | 104.3 | **0.985** | **0.968** | **0.985** | **0.905** | 108.5 ms |
+| YOLO26n-seg | `yolo26n.pt` | 6.3 MB | 2.7 M | 9.0 | 0.983 | 0.951 | 0.983 | 0.820 | 23.1 ms |
+| YOLO11n-seg | `yolo11n_weights.pt` | 5.8 MB | 2.8 M | 9.6 | 0.983 | 0.949 | 0.983 | 0.820 | 21.7 ms |
+| YOLOv9c-seg | `YOLOv9c-seg/weights/best.pt` | 213 MB | 27.6 M | 147.6 | 0.983 | 0.941 | 0.983 | 0.799 | 182.2 ms |
+| RF-DETR-S | Roboflow cloud (API) | 129 MB | — | — | — | — | — | — | — |
+
+RF-DETR row to be filled in after running `notebooks/eval_rfdetr.py` with `ROBOFLOW_API_KEY` set.
 
 ### 17.2 Key Findings
 
