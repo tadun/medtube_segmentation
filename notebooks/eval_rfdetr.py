@@ -18,7 +18,7 @@ import supervision as sv
 from inference import get_model
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-MODEL_ID    = "tadeass-workspace/medtube-2/1"
+MODEL_ID    = "medtube-2/1"
 TEST_IMAGES = Path("/Users/tadun/Downloads/MedTube 2.yolov8/test/images")
 TEST_LABELS = Path("/Users/tadun/Downloads/MedTube 2.yolov8/test/labels")
 CLASSES     = ["Other", "Push-on", "Screwcap", "Universal"]
