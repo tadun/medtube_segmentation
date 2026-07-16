@@ -367,13 +367,22 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
                          else depth_to_heatmap(depth_mm))
         depth_masked  = overlay_masks_on_depth(depth_preview.copy(), results[0])
 
-        # Crop all frames to depth ROI if locked
+        # Crop all frames to depth ROI if locked (only if ROI is reasonably sized)
         if depth_roi is not None:
             y0, y1, x0, x1 = depth_roi
-            c_stream  = color_image[y0:y1, x0:x1]
-            c_overlay = img_overlay[y0:y1, x0:x1]
-            c_depth   = depth_masked[y0:y1, x0:x1]
-            c_heat    = depth_heat[y0:y1, x0:x1]
+            roi_h = y1 - y0
+            roi_w = x1 - x0
+            # Only crop if ROI covers at least 40% of frame height (avoid thin strips)
+            if roi_h >= color_image.shape[0] * 0.4:
+                c_stream  = color_image[y0:y1, x0:x1]
+                c_overlay = img_overlay[y0:y1, x0:x1]
+                c_depth   = depth_masked[y0:y1, x0:x1]
+                c_heat    = depth_heat[y0:y1, x0:x1]
+            else:
+                c_stream  = color_image
+                c_overlay = img_overlay
+                c_depth   = depth_masked
+                c_heat    = depth_heat
         else:
             c_stream  = color_image
             c_overlay = img_overlay
