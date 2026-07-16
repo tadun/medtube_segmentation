@@ -321,8 +321,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
 
     WIN = "MedTube D415  |  TL: RGB   TR: Depth   BL: Masks   BR: Depth+Masks"
     cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WIN, 2700, 1460)
-    cv2.moveWindow(WIN, 0, 3)
+    cv2.resizeWindow(WIN, 1470, 740)
+    cv2.moveWindow(WIN, 0, 25)
 
     while True:
         try:
@@ -371,7 +371,6 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
         if depth_roi is not None:
             y0, y1, x0, x1 = depth_roi
             roi_h = y1 - y0
-            roi_w = x1 - x0
             # Only crop if ROI covers at least 40% of frame height (avoid thin strips)
             if roi_h >= color_image.shape[0] * 0.4:
                 c_stream  = color_image[y0:y1, x0:x1]
@@ -410,8 +409,13 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
             frame_times = frame_times[-FPS_WINDOW:]
         fps = len(frame_times) / max(frame_times[-1] - frame_times[0], 1e-6) if len(frame_times) > 1 else 0.0
 
-        # Model display name
-        model_name = Path(str(getattr(model, 'ckpt_path', '') or '')).stem or 'unknown'
+        # Model display name — show architecture (e.g. "YOLOv8m-seg") not just filename
+        _ckpt = str(getattr(model, 'ckpt_path', '') or '')
+        _yaml = getattr(model.model, 'yaml', {}).get('yaml_file', '')
+        if _yaml:
+            model_name = Path(_yaml).stem  # e.g. "yolov8m-seg", "yolo26n-seg"
+        else:
+            model_name = Path(_ckpt).stem or 'unknown'
 
         # Build 2×2 grid with panel labels; HUD spans full width at bottom
         grid = build_grid(
