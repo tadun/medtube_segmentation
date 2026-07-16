@@ -299,9 +299,9 @@ def depth_to_heatmap(depth_raw: np.ndarray) -> np.ndarray:
     if d_max == d_min:
         return np.zeros((*depth_raw.shape, 3), dtype=np.uint8)
     img8 = np.zeros_like(depth_raw, dtype=np.uint8)
-    img8[valid] = ((depth_raw[valid].astype(np.float32) - d_min) / (d_max - d_min) * 255).astype(np.uint8)
+    img8[valid] = ((depth_raw[valid].astype(np.float32) - d_min) / (d_max - d_min) * 255).clip(1, 255).astype(np.uint8)
     colour = cv2.applyColorMap(img8, cv2.COLORMAP_TURBO)
-    colour[~valid] = 0
+    colour[~valid] = 0  # truly black for missing depth
     return colour
 
 
@@ -433,7 +433,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
 
         if not window_created:
             cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-            cv2.resizeWindow(WIN, 756, 435)
+            cv2.resizeWindow(WIN, int(756*1.5), int(435*1.5))
             cv2.moveWindow(WIN, 0, 25)
             window_created = True
 
@@ -511,20 +511,25 @@ def main():
     print(f"Loading weights from: {weights_path}")
 
     # Discover all available .pt model files for live switching (M key)
+    # Order: yolo26n, yolov8m, yolov9c, yolo11n
     project_root = _PROJECT_ROOT
     weights_dir  = project_root / "weights"
-    model_paths  = sorted(
-        p for p in weights_dir.glob("*.pt")
-        if p.stem not in ("yolov8m-seg", "yolo11m-seg", "rfdetr", "yolo11n_weights")  # skip pretrained/duplicates
-    )
-    # Also include YOLOv9c best.pt if present
+    _ordered_stems = ["yolo26n", "yolo11n"]  # from weights/ dir, in desired order
+    _found = {p.stem: p for p in weights_dir.glob("*.pt")
+              if p.stem not in ("yolov8m-seg", "yolo11m-seg", "rfdetr", "yolo11n_weights")}
+    model_paths: list[Path] = [_found[s] for s in _ordered_stems if s in _found]
+    # Add remaining from weights/ not already included
+    for p in sorted(_found.values()):
+        if p not in model_paths:
+            model_paths.append(p)
+    # YOLOv8m best.pt
+    yolov8m_best = project_root / "runs" / "segment" / "runs" / "2026-07-12_22-48-54" / "YOLOv8-seg" / "weights" / "best.pt"
+    if yolov8m_best.exists():
+        model_paths.insert(1, yolov8m_best)  # after yolo26n
+    # YOLOv9c best.pt
     yolov9c_best = project_root / "YOLOv9c-seg" / "weights" / "best.pt"
     if yolov9c_best.exists():
-        model_paths.append(yolov9c_best)
-    # Also include YOLOv8m best.pt if present
-    yolov8m_best = project_root / "runs" / "segment" / "runs" / "2026-07-12_22-48-54" / "YOLOv8-seg" / "weights" / "best.pt"
-    if yolov8m_best.exists() and yolov8m_best not in model_paths:
-        model_paths.append(yolov8m_best)
+        model_paths.insert(2 if yolov8m_best.exists() else 1, yolov9c_best)  # after v8m
 
     # Build display names for each model (use architecture yaml where possible)
     def _model_display_name(p: Path) -> str:
@@ -546,6 +551,7 @@ def main():
         (i for i, p in enumerate(model_paths) if p.resolve() == weights_path.resolve()), 0
     )
     print(f"\033[36m[info]\033[0m Available models (M key): {model_display_names}")
+    print(f"      Weights: {weights_path.name}")
 
     session_stats = {'snaps': 0, 'rec': 0, 'switches': 0}
     start_ts = time.time()
