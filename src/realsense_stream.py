@@ -63,9 +63,10 @@ GRID_GAP      = 6     # gap in pixels between panels (dark separator)
 
 RECONNECT_DELAY  = 3
 MAX_RETRIES      = 10
-DEFAULT_WEIGHTS  = "yolo26n.pt"
-FALLBACK_WEIGHTS = "runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/best.pt"
-DEFAULT_SAVE_DIR  = Path("runs/captures")
+_PROJECT_ROOT    = Path(__file__).resolve().parent.parent
+DEFAULT_WEIGHTS  = _PROJECT_ROOT / "yolo26n.pt"
+FALLBACK_WEIGHTS = _PROJECT_ROOT / "runs" / "segment" / "runs" / "2026-07-12_22-48-54" / "YOLOv8-seg" / "weights" / "best.pt"
+DEFAULT_SAVE_DIR  = _PROJECT_ROOT / "runs" / "captures"
 SNAPSHOT_SUBDIR   = "snapshots"
 MODEL_IMG_SIZE   = 640
 MODEL_CONF       = 0.35
@@ -479,11 +480,14 @@ def main():
     weights_arg = args.weights.strip()
     if weights_arg:
         weights_path = Path(weights_arg)
+        if not weights_path.is_absolute():
+            weights_path = _PROJECT_ROOT / weights_path
     else:
-        weights_path = Path(os.getenv("MEDTUBE_WEIGHTS", DEFAULT_WEIGHTS))
+        env_w = os.getenv("MEDTUBE_WEIGHTS", "")
+        weights_path = Path(env_w) if env_w else DEFAULT_WEIGHTS
 
-    if not weights_path.exists() and Path(FALLBACK_WEIGHTS).exists():
-        weights_path = Path(FALLBACK_WEIGHTS)
+    if not weights_path.exists() and FALLBACK_WEIGHTS.exists():
+        weights_path = FALLBACK_WEIGHTS
 
     if not weights_path.exists():
         print(f"[error] Weights not found: {weights_path}")
@@ -495,7 +499,7 @@ def main():
     print(f"Loading weights from: {weights_path}")
 
     # Discover all available .pt model files for live switching (M key)
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = _PROJECT_ROOT
     model_paths = sorted(
         p for p in project_root.glob("*.pt")
         if p.stem not in ("yolov8m-seg", "yolo11m-seg", "rfdetr")  # skip pretrained/non-YOLO
@@ -505,8 +509,8 @@ def main():
     if yolov9c_best.exists():
         model_paths.append(yolov9c_best)
     # Also include YOLOv8m best.pt if present
-    yolov8m_best = project_root / "runs" / "segment" / "runs" / "2026-07-12_22-48-54" / "YOLOv8-seg" / "weights" / "best.pt"
-    if yolov8m_best.exists():
+    yolov8m_best = FALLBACK_WEIGHTS
+    if yolov8m_best.exists() and yolov8m_best not in model_paths:
         model_paths.append(yolov8m_best)
     # Ensure the active model is in the list and find its index
     if weights_path.resolve() not in [p.resolve() for p in model_paths]:
