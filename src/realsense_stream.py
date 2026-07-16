@@ -94,7 +94,7 @@ def _set_opt(sensor, option, value: float, label: str):
         rng = sensor.get_option_range(option)
         sensor.set_option(option, min(max(value, rng.min), rng.max))
     except RuntimeError as e:
-        print(f"[warn] Could not set {label}: {e}")
+        print(f"\033[33m[warn]\033[0m Could not set {label}: {e}")
 
 
 def configure_color_sensor(profile):
@@ -108,9 +108,9 @@ def configure_color_sensor(profile):
         if "rgb" in name or "color" in name:
             _set_opt(sensor, rs.option.enable_auto_exposure,      1.0, "enable_auto_exposure")
             _set_opt(sensor, rs.option.enable_auto_white_balance,  1.0, "enable_auto_white_balance")
-            print("[info] Color sensor: auto-exposure + auto-white-balance enabled")
+            print("\033[36m[info]\033[0m Color sensor: auto-exposure + auto-white-balance enabled")
             return
-    print("[warn] Color sensor not found; skipping exposure config")
+    print("\033[33m[warn]\033[0m Color sensor not found; skipping exposure config")
 
 
 # ── Depth colourmap ─────────────────────────────────────────────────────────
@@ -290,18 +290,20 @@ def draw_hud(canvas: np.ndarray, recording: bool, rec_elapsed: float,
 # ── Main stream loop ─────────────────────────────────────────────────────────
 
 def depth_to_heatmap(depth_raw: np.ndarray) -> np.ndarray:
-    """TURBO colourmap auto-ranged to valid depth values per frame (for heatmap panel)."""
+    """TURBO colourmap with percentile-based range for full spectrum usage."""
     valid = depth_raw > 0
     if not valid.any():
         return np.zeros((*depth_raw.shape, 3), dtype=np.uint8)
-    d_min = float(depth_raw[valid].min())
-    d_max = float(depth_raw[valid].max())
-    if d_max == d_min:
-        return np.zeros((*depth_raw.shape, 3), dtype=np.uint8)
+    valid_vals = depth_raw[valid].astype(np.float32)
+    d_min = float(np.percentile(valid_vals, 2))
+    d_max = float(np.percentile(valid_vals, 98))
+    if d_max <= d_min:
+        d_max = d_min + 1.0
     img8 = np.zeros_like(depth_raw, dtype=np.uint8)
-    img8[valid] = ((depth_raw[valid].astype(np.float32) - d_min) / (d_max - d_min) * 255).clip(1, 255).astype(np.uint8)
+    normed = ((valid_vals - d_min) / (d_max - d_min) * 255).clip(0, 255).astype(np.uint8)
+    img8[valid] = normed
     colour = cv2.applyColorMap(img8, cv2.COLORMAP_TURBO)
-    colour[~valid] = 0  # truly black for missing depth
+    colour[~valid] = 0  # black for missing depth
     return colour
 
 
@@ -329,7 +331,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
         try:
             frames = pipeline.wait_for_frames(timeout_ms=15000)
         except RuntimeError as e:
-            print(f"[warn] Frame error: {e} — reconnecting...")
+            print(f"\033[33m[warn]\033[0m Frame error: {e} — reconnecting...")
             return False
 
         aligned     = align.process(frames)
@@ -358,8 +360,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
                 d_lo       = float(np.percentile(valid_d, 5))
                 d_hi       = float(np.percentile(valid_d, 75))    # 75th cuts out far walls
                 depth_range = (max(0.0, d_lo - 20.0), d_hi + 20.0)
-                print(f"[info] Depth ROI locked: x={x0}:{x1}, y={y0}:{y1}")
-                print(f"[info] Depth range auto-estimated: {depth_range[0]:.0f}–{depth_range[1]:.0f} mm")
+                print(f"\033[36m[info]\033[0m Depth ROI locked: x={x0}:{x1}, y={y0}:{y1}")
+                print(f"\033[36m[info]\033[0m Depth range auto-estimated: {depth_range[0]:.0f}\u2013{depth_range[1]:.0f} mm")
 
         results      = model.predict(color_image, imgsz=MODEL_IMG_SIZE, conf=MODEL_CONF, verbose=False)
         img_overlay  = draw_overlay(color_image, results[0])
@@ -432,9 +434,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
                         fps=fps, model_name=model_name)
 
         if not window_created:
-            cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-            cv2.resizeWindow(WIN, int(756*1.5), int(435*1.5))
-            cv2.moveWindow(WIN, 0, 25)
+            cv2.namedWindow(WIN, cv2.WINDOW_GUI_NORMAL)
+            cv2.setWindowProperty(WIN, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
             window_created = True
 
         cv2.imshow(WIN, grid)
@@ -442,7 +443,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
             if recording:
-                print(f"[info] Recording stopped — {rec_count} frames in {rec_dir}")
+                print(f"\033[36m[info]\033[0m Recording stopped \u2014 {rec_count} frames in {rec_dir}")
             return True
 
         elif key == ord(" "):
@@ -502,13 +503,13 @@ def main():
         weights_path = FALLBACK_WEIGHTS
 
     if not weights_path.exists():
-        print(f"[error] Weights not found: {weights_path}")
-        print("  Put weights.pt in the repo root or set MEDTUBE_WEIGHTS to a valid local .pt file.")
+        print(f"\033[31m[error]\033[0m Weights not found: {weights_path}")
+        print("  Put weights in weights/ or set MEDTUBE_WEIGHTS to a valid local .pt file.")
         return
 
     model    = YOLO(str(weights_path))
     save_dir = DEFAULT_SAVE_DIR
-    print(f"Loading weights from: {weights_path}")
+    print(f"\033[36m[info]\033[0m Loading weights: {weights_path.name}")
 
     # Discover all available .pt model files for live switching (M key)
     # Order: yolo26n, yolov8m, yolov9c, yolo11n
@@ -561,7 +562,7 @@ def main():
         try:
             profile = pipeline.start(build_config())
         except RuntimeError as e:
-            print(f"[error] Could not start pipeline: {e}")
+            print(f"\033[31m[error]\033[0m Could not start pipeline: {e}")
             print(f"  Retrying in {RECONNECT_DELAY}s... ({retries + 1}/{MAX_RETRIES})")
             time.sleep(RECONNECT_DELAY)
             retries += 1
@@ -573,11 +574,11 @@ def main():
         try:
             configure_color_sensor(profile)
             # Warmup: let auto-exposure settle before streaming
-            print("[info] Waiting 4s for auto-exposure to settle...")
+            print("\033[36m[info]\033[0m Waiting 4s for auto-exposure to settle...")
             time.sleep(4.0)
             depth_scale = profile.get_device().first_depth_sensor().get_depth_scale()
-            print(f"[info] Streaming — depth scale: {depth_scale:.6f} m/unit")
-            print("[info] Depth colourmap: TURBO  auto-estimated from scene on ROI lock")
+            print(f"\033[36m[info]\033[0m Streaming \u2014 depth scale: {depth_scale:.6f} m/unit")
+            print("\033[36m[info]\033[0m Depth colourmap: TURBO (2nd\u201398th percentile)")
             done = stream_loop(pipeline, align, model, save_dir, start_ts,
                                model_paths=model_paths, model_index=model_index,
                                model_display_names=model_display_names,
