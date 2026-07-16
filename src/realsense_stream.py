@@ -318,11 +318,9 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
     depth_range: tuple | None = None   # (d_min_mm, d_max_mm) auto-estimated from scene
     frame_times: list[float] = []     # rolling window for FPS calculation
     FPS_WINDOW   = 30                 # average over last N frames
+    window_created = False
 
     WIN = "MedTube Segmentation on RealSense D415"
-    cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WIN, 1440, 810)
-    cv2.moveWindow(WIN, 0, 38)
 
     while True:
         try:
@@ -429,6 +427,12 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
                         snapshot_index - 1, rec_count, now - start_ts,
                         fps=fps, model_name=model_name)
 
+        if not window_created:
+            cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(WIN, 1440, 810)
+            cv2.moveWindow(WIN, 0, 38)
+            window_created = True
+
         cv2.imshow(WIN, grid)
 
         key = cv2.waitKey(1) & 0xFF
@@ -498,6 +502,10 @@ def main():
         p for p in project_root.glob("*.pt")
         if p.stem not in ("yolov8m-seg", "yolo11m-seg")  # skip pretrained COCO bases
     )
+    # Also include YOLOv9c best.pt if present
+    yolov9c_best = project_root / "YOLOv9c-seg" / "weights" / "best.pt"
+    if yolov9c_best.exists():
+        model_paths.append(yolov9c_best)
     # Ensure the active model is in the list and find its index
     if weights_path.resolve() not in [p.resolve() for p in model_paths]:
         model_paths.insert(0, weights_path.resolve())
