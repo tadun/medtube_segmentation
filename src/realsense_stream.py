@@ -361,9 +361,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
         results      = model.predict(color_image, imgsz=MODEL_IMG_SIZE, conf=MODEL_CONF, verbose=False)
         img_overlay  = draw_overlay(color_image, results[0])
         depth_heat    = depth_to_heatmap(depth_mm)
-        depth_preview = (depth_to_preview(depth_mm, *depth_range) if depth_range
-                         else depth_to_heatmap(depth_mm))
-        depth_masked  = overlay_masks_on_depth(depth_preview.copy(), results[0])
+        depth_masked  = overlay_masks_on_depth(depth_to_heatmap(depth_mm).copy(), results[0])
 
         # Crop all frames to depth ROI if locked (only if ROI is reasonably sized)
         if depth_roi is not None:
@@ -429,8 +427,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
 
         if not window_created:
             cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-            cv2.resizeWindow(WIN, 1440, 810)
-            cv2.moveWindow(WIN, 0, 38)
+            cv2.resizeWindow(WIN, 1512, 900)
+            cv2.moveWindow(WIN, 0, 37)
             window_created = True
 
         cv2.imshow(WIN, grid)
@@ -500,12 +498,16 @@ def main():
     project_root = Path(__file__).resolve().parent.parent
     model_paths = sorted(
         p for p in project_root.glob("*.pt")
-        if p.stem not in ("yolov8m-seg", "yolo11m-seg")  # skip pretrained COCO bases
+        if p.stem not in ("yolov8m-seg", "yolo11m-seg", "rfdetr")  # skip pretrained/non-YOLO
     )
     # Also include YOLOv9c best.pt if present
     yolov9c_best = project_root / "YOLOv9c-seg" / "weights" / "best.pt"
     if yolov9c_best.exists():
         model_paths.append(yolov9c_best)
+    # Also include YOLOv8m best.pt if present
+    yolov8m_best = project_root / "runs" / "segment" / "runs" / "2026-07-12_22-48-54" / "YOLOv8-seg" / "weights" / "best.pt"
+    if yolov8m_best.exists():
+        model_paths.append(yolov8m_best)
     # Ensure the active model is in the list and find its index
     if weights_path.resolve() not in [p.resolve() for p in model_paths]:
         model_paths.insert(0, weights_path.resolve())
