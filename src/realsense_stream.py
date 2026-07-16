@@ -435,7 +435,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
 
         if not window_created:
             cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-            cv2.moveWindow(WIN, 0, 25)
+            cv2.moveWindow(WIN, 0, 0)
             window_created = True
 
         # Scale grid to fill screen (14" Retina: 2× scaling, so use physical pixels)
