@@ -279,7 +279,7 @@ def draw_hud(canvas: np.ndarray, recording: bool, rec_elapsed: float,
     model_text = f"  {model_name}" if model_name else ""
     left  = (f"{state_text}  {fmt_hms(elapsed_s)}  {fps_text}{model_text}    "
              f"Snapshots: {snapshot_count}   Recording: {rec_count} frames")
-    right = "Q = Quit     Space = Save Snapshot     R = Start / Stop Recording"
+    right = "Q = Quit   Space = Snap   R = Record   M = Switch Model"
     cv2.putText(bar, left,  (HUD_MARGIN, 32), font, 0.55, state_color, 1, cv2.LINE_AA)
     (tw, _), _ = cv2.getTextSize(right, font, 0.5, 1)
     cv2.putText(bar, right, (w - tw - HUD_MARGIN, 32), font, 0.5, (200, 200, 200), 1, cv2.LINE_AA)
@@ -304,7 +304,8 @@ def depth_to_heatmap(depth_raw: np.ndarray) -> np.ndarray:
     return colour
 
 
-def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
+def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
+               model_paths: list | None = None, model_index: int = 0):
     snap_dir = save_dir / SNAPSHOT_SUBDIR
     snap_dir.mkdir(parents=True, exist_ok=True)
     snapshot_index = 1
@@ -439,6 +440,14 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
                 recording = False
                 print(f"[info] Recording stopped — {rec_count} frames → {rec_dir}")
 
+        elif key == ord("m") and model_paths and len(model_paths) > 1:
+            model_index = (model_index + 1) % len(model_paths)
+            new_path = model_paths[model_index]
+            print(f"[info] Switching model → {new_path.name}")
+            model = YOLO(str(new_path))
+            frame_times.clear()  # reset FPS counter for new model
+            print(f"[info] Loaded {new_path.name}")
+
 
 def main():
     args    = parse_args()
@@ -463,6 +472,20 @@ def main():
     save_dir = DEFAULT_SAVE_DIR
     print(f"Loading weights from: {weights_path}")
 
+    # Discover all available .pt model files for live switching (M key)
+    project_root = Path(__file__).resolve().parent.parent
+    model_paths = sorted(
+        p for p in project_root.glob("*.pt")
+        if p.stem not in ("yolov8m-seg", "yolo11m-seg")  # skip pretrained COCO bases
+    )
+    # Ensure the active model is in the list and find its index
+    if weights_path.resolve() not in [p.resolve() for p in model_paths]:
+        model_paths.insert(0, weights_path.resolve())
+    model_index = next(
+        (i for i, p in enumerate(model_paths) if p.resolve() == weights_path.resolve()), 0
+    )
+    print(f"[info] Available models for switching (M key): {[p.name for p in model_paths]}")
+
     while retries < MAX_RETRIES:
         pipeline = rs.pipeline()
         try:
@@ -485,7 +508,8 @@ def main():
             depth_scale = profile.get_device().first_depth_sensor().get_depth_scale()
             print(f"[info] Streaming — depth scale: {depth_scale:.6f} m/unit")
             print("[info] Depth colourmap: TURBO  auto-estimated from scene on ROI lock")
-            done = stream_loop(pipeline, align, model, save_dir, start_ts)
+            done = stream_loop(pipeline, align, model, save_dir, start_ts,
+                               model_paths=model_paths, model_index=model_index)
         finally:
             try:
                 pipeline.stop()
