@@ -306,7 +306,9 @@ def depth_to_heatmap(depth_raw: np.ndarray) -> np.ndarray:
 
 
 def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
-               model_paths: list | None = None, model_index: int = 0):
+               model_paths: list | None = None, model_index: int = 0,
+               model_display_names: list | None = None,
+               session_stats: dict | None = None):
     snap_dir = save_dir / SNAPSHOT_SUBDIR
     snap_dir.mkdir(parents=True, exist_ok=True)
     snapshot_index = 1
@@ -449,8 +451,10 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
             cv2.imwrite(str(snap_dir / f"overlay_{ts}_{snapshot_index:03d}.png"), c_overlay)
             cv2.imwrite(str(snap_dir / f"depth_{ts}_{snapshot_index:03d}.png"),   c_depth)
             cv2.imwrite(str(snap_dir / f"heat_{ts}_{snapshot_index:03d}.png"),    c_heat)
-            print(f"[info] Snapshot {snapshot_index} → {snap_dir}")
+            print(f"\033[36m[info]\033[0m Snapshot {snapshot_index} → {snap_dir}")
             snapshot_index += 1
+            if session_stats is not None:
+                session_stats['snaps'] += 1
 
         elif key == ord("r"):
             if not recording:
@@ -461,18 +465,23 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
                 rec_start_ts  = time.time()
                 rec_count     = 0
                 last_rec_save = 0.0
-                print(f"[info] Recording started → {rec_dir}")
+                print(f"\033[36m[info]\033[0m Recording started → {rec_dir}")
             else:
                 recording = False
-                print(f"[info] Recording stopped — {rec_count} frames → {rec_dir}")
+                if session_stats is not None:
+                    session_stats['rec'] += rec_count
+                print(f"\033[36m[info]\033[0m Recording stopped — {rec_count} frames → {rec_dir}")
 
         elif key == ord("m") and model_paths and len(model_paths) > 1:
             model_index = (model_index + 1) % len(model_paths)
             new_path = model_paths[model_index]
-            print(f"[info] Switching model → {new_path.name}")
+            disp = model_display_names[model_index] if model_display_names else new_path.name
+            print(f"\033[33m[switch]\033[0m Loading {disp}...")
             model = YOLO(str(new_path))
-            frame_times.clear()  # reset FPS counter for new model
-            print(f"[info] Loaded {new_path.name}")
+            frame_times.clear()
+            if session_stats is not None:
+                session_stats['switches'] += 1
+            print(f"\033[32m[loaded]\033[0m {disp}")
 
 
 def main():
@@ -516,13 +525,30 @@ def main():
     yolov8m_best = project_root / "runs" / "segment" / "runs" / "2026-07-12_22-48-54" / "YOLOv8-seg" / "weights" / "best.pt"
     if yolov8m_best.exists() and yolov8m_best not in model_paths:
         model_paths.append(yolov8m_best)
+
+    # Build display names for each model (use architecture yaml where possible)
+    def _model_display_name(p: Path) -> str:
+        """Derive a human-friendly name like 'yolov9c-seg' from a weights path."""
+        try:
+            m = YOLO(str(p))
+            yaml_file = getattr(m.model, 'yaml', {}).get('yaml_file', '')
+            if yaml_file:
+                return Path(yaml_file).stem
+        except Exception:
+            pass
+        return p.stem
+
+    model_display_names = [_model_display_name(p) for p in model_paths]
     # Ensure the active model is in the list and find its index
     if weights_path.resolve() not in [p.resolve() for p in model_paths]:
         model_paths.insert(0, weights_path.resolve())
     model_index = next(
         (i for i, p in enumerate(model_paths) if p.resolve() == weights_path.resolve()), 0
     )
-    print(f"[info] Available models for switching (M key): {[p.name for p in model_paths]}")
+    print(f"\033[36m[info]\033[0m Available models (M key): {model_display_names}")
+
+    session_stats = {'snaps': 0, 'rec': 0, 'switches': 0}
+    start_ts = time.time()
 
     while retries < MAX_RETRIES:
         pipeline = rs.pipeline()
@@ -541,13 +567,15 @@ def main():
         try:
             configure_color_sensor(profile)
             # Warmup: let auto-exposure settle before streaming
-            print("[info] Waiting 4 s for auto-exposure to settle...")
+            print("[info] Waiting 4s for auto-exposure to settle...")
             time.sleep(4.0)
             depth_scale = profile.get_device().first_depth_sensor().get_depth_scale()
             print(f"[info] Streaming — depth scale: {depth_scale:.6f} m/unit")
             print("[info] Depth colourmap: TURBO  auto-estimated from scene on ROI lock")
             done = stream_loop(pipeline, align, model, save_dir, start_ts,
-                               model_paths=model_paths, model_index=model_index)
+                               model_paths=model_paths, model_index=model_index,
+                               model_display_names=model_display_names,
+                               session_stats=session_stats)
         finally:
             try:
                 pipeline.stop()
@@ -561,8 +589,25 @@ def main():
         time.sleep(RECONNECT_DELAY)
 
     cv2.destroyAllWindows()
-    print("Stream stopped.")
+
+    # Session summary
+    elapsed = time.time() - start_ts
+    print()
+    print("\033[1m" + "═" * 50 + "\033[0m")
+    print("\033[1m  SESSION SUMMARY\033[0m")
+    print("\033[1m" + "═" * 50 + "\033[0m")
+    print(f"  Duration       : {fmt_hms(elapsed)}")
+    print(f"  Final model    : \033[33m{model_display_names[model_index] if model_display_names else 'unknown'}\033[0m")
+    print(f"  Snapshots      : {session_stats['snaps']}")
+    print(f"  Recorded frames: {session_stats['rec']}")
+    print(f"  Model switches : {session_stats['switches']}")
+    print("\033[1m" + "═" * 50 + "\033[0m")
+    print()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        cv2.destroyAllWindows()
+        print("\n\033[33m[interrupted]\033[0m Stream stopped by Ctrl+C.")
