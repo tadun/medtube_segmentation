@@ -391,7 +391,7 @@ The local YOLO11m run (`2026-07-12_22-07-43`) was interrupted before saving any 
 Two additional models trained via Roboflow cloud (GPU) to broaden the comparison:
 
 1. **YOLOv8n-seg** — nano-tier v8 baseline; also provides a size-comparison data point within the v8 family
-2. **RF-DETR (Small)** — transformer-based instance segmentation; architecturally distinct from the YOLO family
+1. **RF-DETR (Small)** — transformer-based instance segmentation; architecturally distinct from the YOLO family
 
 ### 16.2 Training Configuration
 
@@ -590,10 +590,10 @@ Hand-collected iPhone photographs of real medical tubes, organised by type:
 Five PDF papers already saved in `Papers/`:
 
 1. **3093-4155-1-PB.pdf** — (Unidentified, needs title extraction)
-2. **e3sconf_icfee2024_04001.pdf** — E3S Conference on Frontiers of Energy and Environment 2024
-3. **s41598-023-45759-z.pdf** — Nature Scientific Reports 2023 paper
-4. **sensors-20-03816.pdf** — MDPI Sensors 2020 paper
-5. **sensors-21-01213.pdf** — MDPI Sensors 2021 paper
+1. **e3sconf_icfee2024_04001.pdf** — E3S Conference on Frontiers of Energy and Environment 2024
+1. **s41598-023-45759-z.pdf** — Nature Scientific Reports 2023 paper
+1. **sensors-20-03816.pdf** — MDPI Sensors 2020 paper
+1. **sensors-21-01213.pdf** — MDPI Sensors 2021 paper
 
 ### 19.6 Other PDFs at Root Level
 
@@ -687,7 +687,7 @@ Five PDF papers already saved in `Papers/`:
 
 ### 19.11 Roboflow Account Details
 
-- **User:** txh543@student.bham.ac.uk
+- **User:** `txh543@student.bham.ac.uk`
 - **Workspaces:** tades-workspace (MedTube v1), tadeass-workspace (MedTube 2)
 - **University:** University of Birmingham
 - **Augmented dataset size:** 7200 images (from 3000 base, 2.4× augmentation)
@@ -724,105 +724,105 @@ Curated list of peer-reviewed and closely relevant references only. BibTeX keys 
 
 1. **[redmon2016yolo]** Redmon, J., Divvala, S., Girshick, R. and Farhadi, A. (2016) 'You Only Look Once: Unified, Real-Time Object Detection', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 779–788. doi: 10.1109/CVPR.2016.91.
 
-2. **[jocher2023yolov8]** Jocher, G., Chaurasia, A. and Qiu, J. (2023) *Ultralytics YOLOv8* [Software], version 8.0.0. Available at: https://github.com/ultralytics/ultralytics (Accessed: 15 July 2026). *Note: No formal paper; cite as software per Ultralytics guidance.*
+1. **[jocher2023yolov8]** Jocher, G., Chaurasia, A. and Qiu, J. (2023) *Ultralytics YOLOv8* [Software], version 8.0.0. Available at: <https://github.com/ultralytics/ultralytics> (Accessed: 15 July 2026). *Note: No formal paper; cite as software per Ultralytics guidance.*
 
-3. **[wang2024yolov9]** Wang, C.-Y., Yeh, I.-H. and Liao, H.-Y.M. (2024) 'YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information', *Computer Vision — ECCV 2024*, Springer Nature Switzerland, pp. 1–21. arXiv: 2402.13616. **Peer-reviewed (ECCV).**
+1. **[wang2024yolov9]** Wang, C.-Y., Yeh, I.-H. and Liao, H.-Y.M. (2024) 'YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information', *Computer Vision — ECCV 2024*, Springer Nature Switzerland, pp. 1–21. arXiv: 2402.13616. **Peer-reviewed (ECCV).**
 
-4. **[jocher2024yolo11]** Jocher, G. and Qiu, J. (2024) *Ultralytics YOLO11* [Software], version 11.0.0. Available at: https://github.com/ultralytics/ultralytics (Accessed: 15 July 2026). *Note: No formal paper; cite as software per Ultralytics guidance.*
+1. **[jocher2024yolo11]** Jocher, G. and Qiu, J. (2024) *Ultralytics YOLO11* [Software], version 11.0.0. Available at: <https://github.com/ultralytics/ultralytics> (Accessed: 15 July 2026). *Note: No formal paper; cite as software per Ultralytics guidance.*
 
-5. **[bochkovskiy2020yolov4]** Bochkovskiy, A., Wang, C.-Y. and Liao, H.-Y.M. (2020) 'YOLOv4: Optimal Speed and Accuracy of Object Detection', arXiv preprint arXiv:2004.10934. *Relevant for mosaic augmentation strategy.*
+1. **[bochkovskiy2020yolov4]** Bochkovskiy, A., Wang, C.-Y. and Liao, H.-Y.M. (2020) 'YOLOv4: Optimal Speed and Accuracy of Object Detection', arXiv preprint arXiv:2004.10934. *Relevant for mosaic augmentation strategy.*
 
 ### 20.2 Detection Transformers (DETR Family)
 
-6. **[carion2020detr]** Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A. and Zagoruyko, S. (2020) 'End-to-End Object Detection with Transformers', *European Conference on Computer Vision (ECCV)*, Springer, pp. 213–229. arXiv: 2005.12872. **Peer-reviewed (ECCV).**
+1. **[carion2020detr]** Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A. and Zagoruyko, S. (2020) 'End-to-End Object Detection with Transformers', *European Conference on Computer Vision (ECCV)*, Springer, pp. 213–229. arXiv: 2005.12872. **Peer-reviewed (ECCV).**
 
-7. **[zhu2021deformable]** Zhu, X., Su, W., Lu, L., Li, B., Wang, X. and Dai, J. (2021) 'Deformable DETR: Deformable Transformers for End-to-End Object Detection', *International Conference on Learning Representations (ICLR)*. arXiv: 2010.04159. **Peer-reviewed (ICLR).**
+1. **[zhu2021deformable]** Zhu, X., Su, W., Lu, L., Li, B., Wang, X. and Dai, J. (2021) 'Deformable DETR: Deformable Transformers for End-to-End Object Detection', *International Conference on Learning Representations (ICLR)*. arXiv: 2010.04159. **Peer-reviewed (ICLR).**
 
-8. **[lv2023rtdetr]** Lv, W., Xu, S., Zhao, Y., Wang, G., Wei, J., Cui, C., Du, Y., Dang, Q. and Liu, Y. (2023) 'DETRs Beat YOLOs on Real-time Object Detection', arXiv preprint arXiv:2304.08069. *Basis for RT-DETR architecture.*
+1. **[lv2023rtdetr]** Lv, W., Xu, S., Zhao, Y., Wang, G., Wei, J., Cui, C., Du, Y., Dang, Q. and Liu, Y. (2023) 'DETRs Beat YOLOs on Real-time Object Detection', arXiv preprint arXiv:2304.08069. *Basis for RT-DETR architecture.*
 
-9. **[robicheaux2025rfdetr]** Robicheaux, P., Gallagher, J., Nelson, J. and Robinson, I. (2025) 'RF-DETR: Neural Architecture Search for Real-Time Detection Transformers', arXiv preprint arXiv:2511.09554. *RF-DETR model used in this project; uses DINOv2 backbone.*
+1. **[robicheaux2025rfdetr]** Robicheaux, P., Gallagher, J., Nelson, J. and Robinson, I. (2025) 'RF-DETR: Neural Architecture Search for Real-Time Detection Transformers', arXiv preprint arXiv:2511.09554. *RF-DETR model used in this project; uses DINOv2 backbone.*
 
 ### 20.3 Instance Segmentation
 
-10. **[he2017maskrcnn]** He, K., Gkioxari, G., Dollár, P. and Girshick, R. (2017) 'Mask R-CNN', *Proceedings of the IEEE International Conference on Computer Vision (ICCV)*, pp. 2961–2969. arXiv: 1703.06870. **Peer-reviewed (ICCV).**
+1. **[he2017maskrcnn]** He, K., Gkioxari, G., Dollár, P. and Girshick, R. (2017) 'Mask R-CNN', *Proceedings of the IEEE International Conference on Computer Vision (ICCV)*, pp. 2961–2969. arXiv: 1703.06870. **Peer-reviewed (ICCV).**
 
-11. **[bolya2019yolact]** Bolya, D., Zhou, C., Xiao, F. and Lee, Y.J. (2019) 'YOLACT: Real-time Instance Segmentation', *Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)*, pp. 9157–9166. arXiv: 1904.02689. **Peer-reviewed (ICCV).**
+1. **[bolya2019yolact]** Bolya, D., Zhou, C., Xiao, F. and Lee, Y.J. (2019) 'YOLACT: Real-time Instance Segmentation', *Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)*, pp. 9157–9166. arXiv: 1904.02689. **Peer-reviewed (ICCV).**
 
 ### 20.4 Foundation Models for Annotation
 
-12. **[kirillov2023sam]** Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.-Y., Dollár, P. and Girshick, R. (2023) 'Segment Anything', *Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)*, pp. 4015–4026. arXiv: 2304.02643. **Peer-reviewed (ICCV).** *Used via Roboflow for SAM-assisted annotation.*
+1. **[kirillov2023sam]** Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.-Y., Dollár, P. and Girshick, R. (2023) 'Segment Anything', *Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)*, pp. 4015–4026. arXiv: 2304.02643. **Peer-reviewed (ICCV).** *Used via Roboflow for SAM-assisted annotation.*
 
-13. **[oquab2024dinov2]** Oquab, M., Darcet, T., Moutakanni, T. et al. (2024) 'DINOv2: Learning Robust Visual Features without Supervision', *Transactions on Machine Learning Research (TMLR)*. arXiv: 2304.07193. **Peer-reviewed (TMLR).** *Backbone of RF-DETR.*
+1. **[oquab2024dinov2]** Oquab, M., Darcet, T., Moutakanni, T. et al. (2024) 'DINOv2: Learning Robust Visual Features without Supervision', *Transactions on Machine Learning Research (TMLR)*. arXiv: 2304.07193. **Peer-reviewed (TMLR).** *Backbone of RF-DETR.*
 
 ### 20.5 Roboflow Platform & Benchmarking
 
-14. **[ciaglia2022rf100]** Ciaglia, F., Zuppichini, F.S., Guerrie, P., McQuade, M. and Solawetz, J. (2022) 'Roboflow 100: A Rich, Multi-Domain Object Detection Benchmark', arXiv preprint arXiv:2211.13523. *Introduces RF100 benchmark; 100 datasets, 7 domains, 224,714 images, 805 classes from Roboflow Universe. Used by Apple, Microsoft, Baidu for benchmarking.*
+1. **[ciaglia2022rf100]** Ciaglia, F., Zuppichini, F.S., Guerrie, P., McQuade, M. and Solawetz, J. (2022) 'Roboflow 100: A Rich, Multi-Domain Object Detection Benchmark', arXiv preprint arXiv:2211.13523. *Introduces RF100 benchmark; 100 datasets, 7 domains, 224,714 images, 805 classes from Roboflow Universe. Used by Apple, Microsoft, Baidu for benchmarking.*
 
 ### 20.6 Evaluation Metrics & Benchmarks
 
-15. **[lin2014coco]** Lin, T.-Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ramanan, D., Dollár, P. and Zitnick, C.L. (2014) 'Microsoft COCO: Common Objects in Context', *European Conference on Computer Vision (ECCV)*, Springer, pp. 740–755. arXiv: 1405.0312. **Peer-reviewed (ECCV).** *Defines mAP50 and mAP50-95 metrics used throughout this project.*
+1. **[lin2014coco]** Lin, T.-Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ramanan, D., Dollár, P. and Zitnick, C.L. (2014) 'Microsoft COCO: Common Objects in Context', *European Conference on Computer Vision (ECCV)*, Springer, pp. 740–755. arXiv: 1405.0312. **Peer-reviewed (ECCV).** *Defines mAP50 and mAP50-95 metrics used throughout this project.*
 
-16. **[padilla2020survey]** Padilla, R., Netto, S.L. and da Silva, E.A.B. (2020) 'A Survey on Performance Metrics for Object-Detection Algorithms', *2020 International Conference on Systems, Signals and Image Processing (IWSSIP)*, IEEE, pp. 237–242. **Peer-reviewed (IEEE).**
+1. **[padilla2020survey]** Padilla, R., Netto, S.L. and da Silva, E.A.B. (2020) 'A Survey on Performance Metrics for Object-Detection Algorithms', *2020 International Conference on Systems, Signals and Image Processing (IWSSIP)*, IEEE, pp. 237–242. **Peer-reviewed (IEEE).**
 
 ### 20.7 Depth Sensors & Intel RealSense
 
-17. **[keselman2017realsense]** Keselman, L., Iselin Woodfill, J., Grunnet-Jepsen, A. and Bhowmik, A. (2017) 'Intel RealSense Stereoscopic Depth Cameras', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)*, pp. 1–10. doi: 10.1109/CVPRW.2017.167. **Peer-reviewed (CVPRW).** *Core reference for D415 camera used in this project.*
+1. **[keselman2017realsense]** Keselman, L., Iselin Woodfill, J., Grunnet-Jepsen, A. and Bhowmik, A. (2017) 'Intel RealSense Stereoscopic Depth Cameras', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)*, pp. 1–10. doi: 10.1109/CVPRW.2017.167. **Peer-reviewed (CVPRW).** *Core reference for D415 camera used in this project.*
 
-18. **[giancola2018survey]** Giancola, S., Valenti, M. and Sala, R. (2018) 'A Survey on 3D Cameras: Metrological Comparison of Time-of-Flight, Structured-Light and Active Stereoscopy Technologies', *SpringerBriefs in Computer Science*, Springer. doi: 10.1007/978-3-319-91761-0. **Peer-reviewed (Springer).** *Compares ToF, structured light, and active stereo depth sensors including RealSense.*
+1. **[giancola2018survey]** Giancola, S., Valenti, M. and Sala, R. (2018) 'A Survey on 3D Cameras: Metrological Comparison of Time-of-Flight, Structured-Light and Active Stereoscopy Technologies', *SpringerBriefs in Computer Science*, Springer. doi: 10.1007/978-3-319-91761-0. **Peer-reviewed (Springer).** *Compares ToF, structured light, and active stereo depth sensors including RealSense.*
 
-19. **[zanuttigh2016time]** Zanuttigh, P., Marin, G., Dal Mutto, C., Dominio, F., Minto, L. and Cortelazzo, G.M. (2016) *Time-of-Flight and Structured Light Depth Cameras: Technology and Applications*, Springer. doi: 10.1007/978-3-319-30973-6. **Peer-reviewed (Springer monograph).** *Comprehensive depth camera technology reference.*
+1. **[zanuttigh2016time]** Zanuttigh, P., Marin, G., Dal Mutto, C., Dominio, F., Minto, L. and Cortelazzo, G.M. (2016) *Time-of-Flight and Structured Light Depth Cameras: Technology and Applications*, Springer. doi: 10.1007/978-3-319-30973-6. **Peer-reviewed (Springer monograph).** *Comprehensive depth camera technology reference.*
 
 ### 20.8 RGB-D / Depth in Object Detection & Classification
 
-20. **[eitel2015rgbd]** Eitel, A., Springenberg, J.T., Spinello, L., Riedmiller, M. and Burgard, W. (2015) 'Multimodal Deep Learning for Robust RGB-D Object Recognition', *Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)*, pp. 681–687. arXiv: 1507.06821. **Peer-reviewed (IROS).** *Two-stream CNN architecture for RGB + depth with late fusion — directly relevant to depth fusion approach considered in this project.*
+1. **[eitel2015rgbd]** Eitel, A., Springenberg, J.T., Spinello, L., Riedmiller, M. and Burgard, W. (2015) 'Multimodal Deep Learning for Robust RGB-D Object Recognition', *Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)*, pp. 681–687. arXiv: 1507.06821. **Peer-reviewed (IROS).** *Two-stream CNN architecture for RGB + depth with late fusion — directly relevant to depth fusion approach considered in this project.*
 
-21. **[gupta2014learning]** Gupta, S., Girshick, R., Arbeláez, P. and Malik, J. (2014) 'Learning Rich Features from RGB-D Images for Object Detection and Segmentation', *European Conference on Computer Vision (ECCV)*, Springer, pp. 345–360. **Peer-reviewed (ECCV).** *Introduces HHA encoding (horizontal disparity, height above ground, angle) for converting depth maps to CNN-compatible 3-channel input.*
+1. **[gupta2014learning]** Gupta, S., Girshick, R., Arbeláez, P. and Malik, J. (2014) 'Learning Rich Features from RGB-D Images for Object Detection and Segmentation', *European Conference on Computer Vision (ECCV)*, Springer, pp. 345–360. **Peer-reviewed (ECCV).** *Introduces HHA encoding (horizontal disparity, height above ground, angle) for converting depth maps to CNN-compatible 3-channel input.*
 
-22. **[qi2018frustum]** Qi, C.R., Liu, W., Wu, C., Su, H. and Guibas, L.J. (2018) 'Frustum PointNets for 3D Object Detection from RGB-D Data', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 918–927. arXiv: 1711.08488. **Peer-reviewed (CVPR).** *Combines 2D detection with 3D point cloud processing for RGB-D.*
+1. **[qi2018frustum]** Qi, C.R., Liu, W., Wu, C., Su, H. and Guibas, L.J. (2018) 'Frustum PointNets for 3D Object Detection from RGB-D Data', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 918–927. arXiv: 1711.08488. **Peer-reviewed (CVPR).** *Combines 2D detection with 3D point cloud processing for RGB-D.*
 
-23. **[schwarz2015rgbd]** Schwarz, M., Schulz, H. and Behnke, S. (2015) 'RGB-D Object Recognition and Pose Estimation Based on Pre-trained Convolutional Neural Network Features', *2015 IEEE International Conference on Robotics and Automation (ICRA)*, pp. 1329–1335. **Peer-reviewed (ICRA).** *Transfer learning with depth for robotic object recognition.*
+1. **[schwarz2015rgbd]** Schwarz, M., Schulz, H. and Behnke, S. (2015) 'RGB-D Object Recognition and Pose Estimation Based on Pre-trained Convolutional Neural Network Features', *2015 IEEE International Conference on Robotics and Automation (ICRA)*, pp. 1329–1335. **Peer-reviewed (ICRA).** *Transfer learning with depth for robotic object recognition.*
 
-24. **[song2015sunrgbd]** Song, S., Lichtenberg, S.P. and Xiao, J. (2015) 'SUN RGB-D: A RGB-D Scene Understanding Benchmark Suite', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 567–576. **Peer-reviewed (CVPR).** *Major RGB-D dataset and benchmark for scene understanding.*
+1. **[song2015sunrgbd]** Song, S., Lichtenberg, S.P. and Xiao, J. (2015) 'SUN RGB-D: A RGB-D Scene Understanding Benchmark Suite', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 567–576. **Peer-reviewed (CVPR).** *Major RGB-D dataset and benchmark for scene understanding.*
 
-25. **[ren2015fasterrcnn]** Ren, S., He, K., Girshick, R. and Sun, J. (2015) 'Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks', *Advances in Neural Information Processing Systems (NeurIPS)*, 28, pp. 91–99. arXiv: 1506.01497. **Peer-reviewed (NeurIPS).** *Foundational two-stage detector; precursor to Mask R-CNN.*
+1. **[ren2015fasterrcnn]** Ren, S., He, K., Girshick, R. and Sun, J. (2015) 'Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks', *Advances in Neural Information Processing Systems (NeurIPS)*, 28, pp. 91–99. arXiv: 1506.01497. **Peer-reviewed (NeurIPS).** *Foundational two-stage detector; precursor to Mask R-CNN.*
 
 ### 20.9 Transfer Learning & Data Augmentation
 
-26. **[shorten2019augmentation]** Shorten, C. and Khoshgoftaar, T.M. (2019) 'A Survey on Image Data Augmentation for Deep Learning', *Journal of Big Data*, 6(1), pp. 1–48. doi: 10.1186/s40537-019-0197-0. **Peer-reviewed (Springer).** *Covers mosaic, copy-paste, colour jitter, erasing — all used in this project.*
+1. **[shorten2019augmentation]** Shorten, C. and Khoshgoftaar, T.M. (2019) 'A Survey on Image Data Augmentation for Deep Learning', *Journal of Big Data*, 6(1), pp. 1–48. doi: 10.1186/s40537-019-0197-0. **Peer-reviewed (Springer).** *Covers mosaic, copy-paste, colour jitter, erasing — all used in this project.*
 
-27. **[he2016resnet]** He, K., Zhang, X., Ren, S. and Sun, J. (2016) 'Deep Residual Learning for Image Recognition', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 770–778. **Peer-reviewed (CVPR).** *Backbone architecture used in YOLO and DETR models.*
+1. **[he2016resnet]** He, K., Zhang, X., Ren, S. and Sun, J. (2016) 'Deep Residual Learning for Image Recognition', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 770–778. **Peer-reviewed (CVPR).** *Backbone architecture used in YOLO and DETR models.*
 
-28. **[lin2017fpn]** Lin, T.-Y., Dollár, P., Girshick, R., He, K., Hariharan, B. and Belongie, S. (2017) 'Feature Pyramid Networks for Object Detection', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 2117–2125. **Peer-reviewed (CVPR).** *Multi-scale feature extraction neck architecture used in YOLO models.*
+1. **[lin2017fpn]** Lin, T.-Y., Dollár, P., Girshick, R., He, K., Hariharan, B. and Belongie, S. (2017) 'Feature Pyramid Networks for Object Detection', *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pp. 2117–2125. **Peer-reviewed (CVPR).** *Multi-scale feature extraction neck architecture used in YOLO models.*
 
 ### 20.10 Medical Waste, Plastic & Circular Economy
 
-29. **[who2024healthcare]** World Health Organization (2024) *Health-Care Waste*. Fact Sheet, 24 October. Available at: https://www.who.int/news-room/fact-sheets/detail/health-care-waste (Accessed: 15 July 2026). *Key statistics: 85% non-hazardous / 15% hazardous; high-income countries generate 0.5 kg hazardous waste per hospital bed per day; 16 billion injections administered worldwide annually.*
+1. **[who2024healthcare]** World Health Organization (2024) *Health-Care Waste*. Fact Sheet, 24 October. Available at: <https://www.who.int/news-room/fact-sheets/detail/health-care-waste> (Accessed: 15 July 2026). *Key statistics: 85% non-hazardous / 15% hazardous; high-income countries generate 0.5 kg hazardous waste per hospital bed per day; 16 billion injections administered worldwide annually.*
 
-30. **[windfeld2015medical]** Windfeld, E.S. and Brooks, M.S.-L. (2015) 'Medical Waste Management — A Review', *Journal of Environmental Management*, 163, pp. 98–108. doi: 10.1016/j.jenvman.2015.08.013. **Peer-reviewed (Elsevier).**
+1. **[windfeld2015medical]** Windfeld, E.S. and Brooks, M.S.-L. (2015) 'Medical Waste Management — A Review', *Journal of Environmental Management*, 163, pp. 98–108. doi: 10.1016/j.jenvman.2015.08.013. **Peer-reviewed (Elsevier).**
 
-31. **[chartier2014safe]** Chartier, Y., Emmanuel, J., Pieper, U. et al. (eds.) (2014) *Safe Management of Wastes from Health-care Activities*, 2nd edn. Geneva: World Health Organization. **WHO technical guidance document.**
+1. **[chartier2014safe]** Chartier, Y., Emmanuel, J., Pieper, U. et al. (eds.) (2014) *Safe Management of Wastes from Health-care Activities*, 2nd edn. Geneva: World Health Organization. **WHO technical guidance document.**
 
-32. **[nhs2022netzero]** NHS England (2022) *Delivering a Net Zero National Health Service*. Available at: https://www.england.nhs.uk/greenernhs/a-net-zero-nhs/ (Accessed: 15 July 2026). *NHS net zero targets: 2040 for direct emissions, 2045 for supply chain. Direct emissions down 68% since 1990.*
+1. **[nhs2022netzero]** NHS England (2022) *Delivering a Net Zero National Health Service*. Available at: <https://www.england.nhs.uk/greenernhs/a-net-zero-nhs/> (Accessed: 15 July 2026). *NHS net zero targets: 2040 for direct emissions, 2045 for supply chain. Direct emissions down 68% since 1990.*
 
-33. **[pgh2024waste]** Practice Greenhealth (2024) *Health Care Waste*. Available at: https://practicegreenhealth.org/topics/waste/waste-0 (Accessed: 15 July 2026). *US hospitals produce over 5 million tonnes of waste per year; 29 pounds per bed per day.*
+1. **[pgh2024waste]** Practice Greenhealth (2024) *Health Care Waste*. Available at: <https://practicegreenhealth.org/topics/waste/waste-0> (Accessed: 15 July 2026). *US hospitals produce over 5 million tonnes of waste per year; 29 pounds per bed per day.*
 
-34. **[rizan2021environmental]** Rizan, C., Reed, M. and Bhutta, M.F. (2021) 'Environmental Impact of Personal Protective Equipment Distributed for Use by Health and Social Care Services in England in the First Six Months of the COVID-19 Pandemic', *Journal of the Royal Society of Medicine*, 114(5), pp. 250–263. doi: 10.1177/01410768211001583. **Peer-reviewed (JRSM).** *Quantifies plastic waste surge from PPE during COVID-19.*
+1. **[rizan2021environmental]** Rizan, C., Reed, M. and Bhutta, M.F. (2021) 'Environmental Impact of Personal Protective Equipment Distributed for Use by Health and Social Care Services in England in the First Six Months of the COVID-19 Pandemic', *Journal of the Royal Society of Medicine*, 114(5), pp. 250–263. doi: 10.1177/01410768211001583. **Peer-reviewed (JRSM).** *Quantifies plastic waste surge from PPE during COVID-19.*
 
-35. **[klemes2020energy]** Klemeš, J.J., Fan, Y.V., Tan, R.R. and Jiang, P. (2020) 'Minimising the Present and Future Plastic Waste, Energy and Environmental Footprints Related to COVID-19', *Renewable and Sustainable Energy Reviews*, 127, p. 109883. doi: 10.1016/j.rser.2020.109883. **Peer-reviewed (Elsevier).** *Single-use medical plastics environmental footprint analysis.*
+1. **[klemes2020energy]** Klemeš, J.J., Fan, Y.V., Tan, R.R. and Jiang, P. (2020) 'Minimising the Present and Future Plastic Waste, Energy and Environmental Footprints Related to COVID-19', *Renewable and Sustainable Energy Reviews*, 127, p. 109883. doi: 10.1016/j.rser.2020.109883. **Peer-reviewed (Elsevier).** *Single-use medical plastics environmental footprint analysis.*
 
-36. **[lee2023medical]** Lee, B.K., Ellenbecker, M.J. and Moure-Eraso, R. (2004) 'Analyses of the Recycling Potential of Medical Plastic Wastes', *Waste Management*, 24(10), pp. 991–998. doi: 10.1016/j.wasman.2004.07.006. **Peer-reviewed (Elsevier).** *Direct relevance: analyses which medical plastics (PP, PS, PE) can be recycled and at what rates; polypropylene tubes are 70–80% recyclable.*
+1. **[lee2023medical]** Lee, B.K., Ellenbecker, M.J. and Moure-Eraso, R. (2004) 'Analyses of the Recycling Potential of Medical Plastic Wastes', *Waste Management*, 24(10), pp. 991–998. doi: 10.1016/j.wasman.2004.07.006. **Peer-reviewed (Elsevier).** *Direct relevance: analyses which medical plastics (PP, PS, PE) can be recycled and at what rates; polypropylene tubes are 70–80% recyclable.*
 
 ### 20.11 Deep Learning Frameworks & Tools
 
-37. **[paszke2019pytorch]** Paszke, A., Gross, S., Massa, F. et al. (2019) 'PyTorch: An Imperative Style, High-Performance Deep Learning Library', *Advances in Neural Information Processing Systems (NeurIPS)*, 32, pp. 8026–8037. **Peer-reviewed (NeurIPS).**
+1. **[paszke2019pytorch]** Paszke, A., Gross, S., Massa, F. et al. (2019) 'PyTorch: An Imperative Style, High-Performance Deep Learning Library', *Advances in Neural Information Processing Systems (NeurIPS)*, 32, pp. 8026–8037. **Peer-reviewed (NeurIPS).**
 
 ### 20.12 Papers Already Collected (in Papers/ folder — titles TBC)
 
-38. **sensors-20-03816.pdf** — MDPI Sensors, 2020 (doi: 10.3390/s20133816). **Peer-reviewed.**
-39. **sensors-21-01213.pdf** — MDPI Sensors, 2021 (doi: 10.3390/s21041213). **Peer-reviewed.**
-40. **s41598-023-45759-z.pdf** — Nature Scientific Reports, 2023. **Peer-reviewed.**
-41. **e3sconf_icfee2024_04001.pdf** — E3S Web of Conferences, ICFEE 2024. **Conference proceedings.**
-42. **3093-4155-1-PB.pdf** — Title TBC (needs extraction from PDF).
+1. **sensors-20-03816.pdf** — MDPI Sensors, 2020 (doi: 10.3390/s20133816). **Peer-reviewed.**
+1. **sensors-21-01213.pdf** — MDPI Sensors, 2021 (doi: 10.3390/s21041213). **Peer-reviewed.**
+1. **s41598-023-45759-z.pdf** — Nature Scientific Reports, 2023. **Peer-reviewed.**
+1. **e3sconf_icfee2024_04001.pdf** — E3S Web of Conferences, ICFEE 2024. **Conference proceedings.**
+1. **3093-4155-1-PB.pdf** — Title TBC (needs extraction from PDF).
 
 ### 20.13 Key Statistics for Introduction/Motivation
 
@@ -838,3 +838,34 @@ Curated list of peer-reviewed and closely relevant references only. BibTeX keys 
 | NHS net zero target (supply chain) | 2045 | NHS England (2022) |
 | Polypropylene recyclability rate | 70–80% | Lee et al. (2004) |
 | COVID-19 PPE waste (England, 6 months) | >27,000 tonnes | Rizan et al. (2021) |
+
+## 21. Session Update (2026-07-16) — Stream Improvements & Cycle 5
+
+### 21.1 Completed improvements
+
+| Item | Description | Status |
+| --- | --- | --- |
+| #9 FPS counter | Rolling 30-frame average FPS shown in HUD | ✅ |
+| #10 Model switch | M key cycles through models (26n → v8m → v9c → 11n) | ✅ |
+| #14 Confusion matrices | 2×2 comparison figure generated (`runs/figures/confusion_matrix_comparison.png`) | ✅ |
+| Window fullscreen | Grid scaled to 3024×1774 physical pixels for Retina 14" | ✅ |
+| Ctrl+C handling | Clean exit with session summary | ✅ |
+| ANSI colour output | `[info]`=cyan, `[warn]`=yellow, `[error]`=red, `[switch]`=yellow, `[loaded]`=green | ✅ |
+| Depth heatmap | Percentile stretch (2nd–98th) uses full TURBO spectrum | ✅ |
+| Model display names | Shows architecture (e.g. `yolo26n-seg`) not just filename | ✅ |
+| Session summary | Prints duration, final model, snaps, recordings, switches on exit | ✅ |
+
+### 21.2 Stream architecture notes
+
+- Models discovered from `weights/` directory at startup
+- Model display names resolved from YOLO yaml metadata
+- Grid image scaled to target resolution before display (bypasses broken `resizeWindow` on macOS Retina)
+- Window positioned at y=-50 to tuck title bar behind menu bar
+
+### 21.3 Next steps
+
+1. **#15 Record inference demo** — run stream with R key to capture a multi-model recording for the report
+2. **#3 Class imbalance** — address via weighted loss or augmentation balancing in next training round
+3. **#1 Depth-only/RGB-D training** — depth ablation experiment (train on depth heatmap images)
+4. **Capture qualitative screenshots** — use Space key during stream with different models and tube arrangements
+5. **Write the report** — all quantitative data is ready
