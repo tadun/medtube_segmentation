@@ -264,7 +264,8 @@ def fmt_hms(seconds: float) -> str:
 
 
 def draw_hud(canvas: np.ndarray, recording: bool, rec_elapsed: float,
-             snapshot_count: int, rec_count: int, elapsed_s: float) -> np.ndarray:
+             snapshot_count: int, rec_count: int, elapsed_s: float,
+             fps: float = 0.0, model_name: str = "") -> np.ndarray:
     h, w = canvas.shape[:2]
     bar  = np.zeros((HUD_H, w, 3), dtype=np.uint8)
     font = cv2.FONT_HERSHEY_DUPLEX
@@ -274,7 +275,9 @@ def draw_hud(canvas: np.ndarray, recording: bool, rec_elapsed: float,
     else:
         state_text  = "[LIVE]"
         state_color = (60, 220, 60)
-    left  = (f"{state_text}  {fmt_hms(elapsed_s)}    "
+    fps_text = f"{fps:.1f} FPS" if fps > 0 else ""
+    model_text = f"  {model_name}" if model_name else ""
+    left  = (f"{state_text}  {fmt_hms(elapsed_s)}  {fps_text}{model_text}    "
              f"Snapshots: {snapshot_count}   Recording: {rec_count} frames")
     right = "Q = Quit     Space = Save Snapshot     R = Start / Stop Recording"
     cv2.putText(bar, left,  (HUD_MARGIN, 32), font, 0.55, state_color, 1, cv2.LINE_AA)
@@ -312,6 +315,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
     rec_dir: Path | None  = None
     depth_roi:   tuple | None = None
     depth_range: tuple | None = None   # (d_min_mm, d_max_mm) auto-estimated from scene
+    frame_times: list[float] = []     # rolling window for FPS calculation
+    FPS_WINDOW   = 30                 # average over last N frames
 
     WIN = "MedTube D415  |  TL: RGB   TR: Depth   BL: Masks   BR: Depth+Masks"
     cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
@@ -382,6 +387,15 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
 
         rec_elapsed = (now - rec_start_ts) if recording else 0.0
 
+        # FPS calculation (rolling window)
+        frame_times.append(now)
+        if len(frame_times) > FPS_WINDOW:
+            frame_times = frame_times[-FPS_WINDOW:]
+        fps = len(frame_times) / max(frame_times[-1] - frame_times[0], 1e-6) if len(frame_times) > 1 else 0.0
+
+        # Model display name
+        model_name = Path(str(getattr(model, 'ckpt_path', '') or '')).stem or 'unknown'
+
         # Build 2×2 grid with panel labels; HUD spans full width at bottom
         grid = build_grid(
             label_panel(c_stream,  "RGB Stream"),
@@ -391,7 +405,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float):
             GRID_PANEL_W,
         )
         grid = draw_hud(grid, recording, rec_elapsed,
-                        snapshot_index - 1, rec_count, now - start_ts)
+                        snapshot_index - 1, rec_count, now - start_ts,
+                        fps=fps, model_name=model_name)
 
         cv2.imshow(WIN, grid)
 
