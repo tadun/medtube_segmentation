@@ -438,8 +438,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
             cv2.moveWindow(WIN, 0, 25)
             window_created = True
 
-        # Scale grid to fill screen (14" Retina: 1512x982 logical, minus menu+dock)
-        target_w, target_h = 1512, 887
+        # Scale grid to fill screen (14" Retina: 2× scaling, so use physical pixels)
+        target_w, target_h = 3024, 1774
         gh, gw = grid.shape[:2]
         scale = min(target_w / gw, target_h / gh)
         display = cv2.resize(grid, (int(gw * scale), int(gh * scale)))
