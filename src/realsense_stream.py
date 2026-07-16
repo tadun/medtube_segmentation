@@ -434,11 +434,16 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
                         fps=fps, model_name=model_name)
 
         if not window_created:
-            cv2.namedWindow(WIN, cv2.WINDOW_GUI_NORMAL)
-            cv2.setWindowProperty(WIN, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+            cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
+            cv2.moveWindow(WIN, 0, 25)
             window_created = True
 
-        cv2.imshow(WIN, grid)
+        # Scale grid to fill screen (14" Retina: 1512x982 logical, minus menu+dock)
+        target_w, target_h = 1512, 887
+        gh, gw = grid.shape[:2]
+        scale = min(target_w / gw, target_h / gh)
+        display = cv2.resize(grid, (int(gw * scale), int(gh * scale)))
+        cv2.imshow(WIN, display)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
