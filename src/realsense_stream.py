@@ -321,7 +321,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
 
     WIN = "MedTube D415  |  TL: RGB   TR: Depth   BL: Masks   BR: Depth+Masks"
     cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WIN, 1350, 730)
+    cv2.resizeWindow(WIN, 2700, 1460)
     cv2.moveWindow(WIN, 0, 3)
 
     while True:
@@ -367,11 +367,18 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
                          else depth_to_heatmap(depth_mm))
         depth_masked  = overlay_masks_on_depth(depth_preview.copy(), results[0])
 
-        # Always show full frames — avoids portrait-shaped panels from narrow depth ROI
-        c_stream  = color_image
-        c_overlay = img_overlay
-        c_depth   = depth_masked
-        c_heat    = depth_heat
+        # Crop all frames to depth ROI if locked
+        if depth_roi is not None:
+            y0, y1, x0, x1 = depth_roi
+            c_stream  = color_image[y0:y1, x0:x1]
+            c_overlay = img_overlay[y0:y1, x0:x1]
+            c_depth   = depth_masked[y0:y1, x0:x1]
+            c_heat    = depth_heat[y0:y1, x0:x1]
+        else:
+            c_stream  = color_image
+            c_overlay = img_overlay
+            c_depth   = depth_masked
+            c_heat    = depth_heat
 
         now = time.time()
 
@@ -401,8 +408,8 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
         grid = build_grid(
             label_panel(c_stream,  "RGB Stream"),
             label_panel(c_heat,    "Depth Heatmap"),
-            label_panel(c_overlay, "Stream + Masks"),
-            label_panel(c_depth,   "Depth + Masks"),
+            label_panel(c_overlay, f"Stream + Masks [{model_name}]"),
+            label_panel(c_depth,   f"Depth + Masks [{model_name}]"),
             GRID_PANEL_W,
         )
         grid = draw_hud(grid, recording, rec_elapsed,
