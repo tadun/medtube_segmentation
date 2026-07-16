@@ -361,9 +361,11 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
 
         results      = model.predict(color_image, imgsz=MODEL_IMG_SIZE, conf=MODEL_CONF, verbose=False)
         img_overlay  = draw_overlay(color_image, results[0])
-        depth_heat    = depth_to_heatmap(depth_mm)
-        depth_preview = depth_to_heatmap(depth_mm)
-        depth_masked  = overlay_masks_on_depth(depth_preview.copy(), results[0])
+
+        # Depth heatmap — skip if no valid depth pixels (sensor still warming up)
+        has_depth    = np.any(depth_mm > 0)
+        depth_heat   = depth_to_heatmap(depth_mm) if has_depth else np.zeros((*depth_mm.shape, 3), dtype=np.uint8)
+        depth_masked = overlay_masks_on_depth(depth_heat.copy(), results[0]) if has_depth else depth_heat.copy()
 
         # Crop all frames to depth ROI if locked (only if ROI is reasonably sized)
         if depth_roi is not None:
@@ -429,7 +431,7 @@ def stream_loop(pipeline, align, model, save_dir: Path, start_ts: float,
 
         if not window_created:
             cv2.namedWindow(WIN, cv2.WINDOW_NORMAL)
-            cv2.resizeWindow(WIN, 1512, 870)
+            cv2.resizeWindow(WIN, 756, 435)
             cv2.moveWindow(WIN, 0, 25)
             window_created = True
 
@@ -504,7 +506,7 @@ def main():
     weights_dir  = project_root / "weights"
     model_paths  = sorted(
         p for p in weights_dir.glob("*.pt")
-        if p.stem not in ("yolov8m-seg", "yolo11m-seg", "rfdetr")  # skip pretrained/non-YOLO
+        if p.stem not in ("yolov8m-seg", "yolo11m-seg", "rfdetr", "yolo11n_weights")  # skip pretrained/duplicates
     )
     # Also include YOLOv9c best.pt if present
     yolov9c_best = project_root / "YOLOv9c-seg" / "weights" / "best.pt"
