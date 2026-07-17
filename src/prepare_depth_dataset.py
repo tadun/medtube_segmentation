@@ -16,7 +16,6 @@ Requires paired rgb_*.png + depth_*.png in each tube_* folder.
 """
 
 import argparse
-import os
 from pathlib import Path
 
 import cv2
@@ -58,6 +57,7 @@ def make_rgbd(rgb: np.ndarray, depth_mm: np.ndarray) -> np.ndarray:
 def main():
     parser = argparse.ArgumentParser(description="Prepare depth-only and RGB-D datasets.")
     parser.add_argument("--source", default="dataset", help="Source directory with tube_* folders")
+    parser.add_argument("--labels", default="", help="Directory with YOLO .txt label files to copy")
     parser.add_argument("--output", default="runs/depth_experiment", help="Output directory")
     args = parser.parse_args()
 
@@ -96,14 +96,49 @@ def main():
 
             total += 1
 
-    print(f"\033[36m[info]\033[0m Processed {total} paired frames from {len(tube_dirs)} tubes")
+    # ── Copy labels ───────────────────────────────────────────────────────────
+    # Look for YOLO label files that match the generated image names
+    label_source = Path(args.labels) if args.labels else None
+    depth_label_dir = out / "depth_only" / "labels"
+    rgbd_label_dir  = out / "rgbd" / "labels"
+    depth_label_dir.mkdir(parents=True, exist_ok=True)
+    rgbd_label_dir.mkdir(parents=True, exist_ok=True)
+
+    labels_copied = 0
+    if label_source and label_source.exists():
+        # Match by image stem → label file
+        for img_file in depth_dir.glob("*.png"):
+            label_file = label_source / (img_file.stem + ".txt")
+            if label_file.exists():
+                import shutil
+                shutil.copy2(label_file, depth_label_dir / label_file.name)
+                shutil.copy2(label_file, rgbd_label_dir / label_file.name)
+                labels_copied += 1
+        print(f"\033[36m[info]\033[0m Copied {labels_copied} label files")
+    else:
+        print("\033[33m[warn]\033[0m No --labels dir specified; skipping label copy")
+
+    # ── Create data.yaml files ────────────────────────────────────────────────
+    data_yaml_template = """train: {images_dir}
+val: {images_dir}
+test: {images_dir}
+
+nc: 4
+names: ['Other', 'Push-on', 'Screwcap', 'Universal']
+"""
+    for variant in ("depth_only", "rgbd"):
+        yaml_path = out / variant / "data.yaml"
+        imgs = str((out / variant / "images").resolve())
+        yaml_path.write_text(data_yaml_template.format(images_dir=imgs))
+        print(f"\033[36m[info]\033[0m Created {yaml_path}")
+
+    print(f"\n\033[36m[info]\033[0m Processed {total} paired frames from {len(tube_dirs)} tubes")
     print(f"  Depth-only: {depth_dir}")
     print(f"  RGB-D:      {rgbd_dir}")
     print()
-    print("Next steps:")
-    print("  1. Copy existing YOLO labels to depth_only/labels/ and rgbd/labels/")
-    print("  2. Create data.yaml pointing to these directories")
-    print("  3. Train: YOLO('yolo26n.pt').train(data='depth_only/data.yaml', ...)")
+    print("To train:")
+    print(f"  rs_env/bin/python -c \"from ultralytics import YOLO; YOLO('weights/yolo26n.pt').train(data='{out}/depth_only/data.yaml', epochs=50, imgsz=640)\"")
+    print(f"  rs_env/bin/python -c \"from ultralytics import YOLO; YOLO('weights/yolo26n.pt').train(data='{out}/rgbd/data.yaml', epochs=50, imgsz=640)\"")
 
 
 if __name__ == "__main__":

@@ -1,90 +1,88 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# MedTube Segmentation — Live Demo Script
+# MedTube Segmentation — Demo Recording & Screenshot Script
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# PURPOSE: Demonstrate real-time instance segmentation of medical tubes using
-#          the Intel RealSense D415 depth camera and multiple YOLO architectures.
+# PURPOSE: Record a demonstration video and capture all key screenshots for the
+#          final project report in a single session.
 #
 # SETUP:
 #   1. Place tubes on the matte surface under the camera
 #   2. Run: ./stream.sh
-#   3. Follow the sequence below
+#   3. Follow the timeline below (screenshots = SPACE, recording = R)
+#
+# TUBES NEEDED:
+#   - tube_2 (Universal — red cap)
+#   - tube_1 (Screwcap — green label)
+#   - tube_4 (Push-on — blue cap)
+#   - tube_8 (Other — yellow label)
+#   - tubes 5, 6, 7 (extra Push-on for multi-instance scene)
 #
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# ── DEMO SEQUENCE (approx 5 minutes total) ──────────────────────────────────
-
-# SCENE 1: Single tube per class (60s)
-# Place one tube of each class in view simultaneously:
-#   - tube_2 (Universal) — red cap
-#   - tube_1 (Screwcap) — green label
-#   - tube_4 (Push-on) — blue cap
-#   - tube_8 (Other) — yellow label
+# ── TIMELINE (approx 3 minutes) ─────────────────────────────────────────────
 #
-# Actions:
-#   [0:00] Start stream (./stream.sh) — model starts as yolo26n-seg
-#   [0:05] Wait for depth ROI lock + first detections
-#   [0:10] Press SPACE — snapshot all 4 classes detected simultaneously
-#   [0:15] Press M — switch to yolov8m-seg (note FPS drop in HUD)
-#   [0:20] Press SPACE — snapshot for comparison
-#   [0:25] Press M — switch to yolov9c-seg
-#   [0:30] Press SPACE — snapshot
-#   [0:35] Press M — switch to yolo11n-seg
-#   [0:40] Press SPACE — snapshot
-#   [0:45] Press M — back to yolo26n-seg
-
-# SCENE 2: Multiple tubes of same class (45s)
-# Place 3–4 Push-on tubes (tubes 4, 5, 6, 7) spread across the surface
+# [0:00] ./stream.sh — starts on YOLO26n
+#        Wait for "Depth ROI locked" in terminal
 #
-# Actions:
-#   [0:50] Arrange Push-on tubes
-#   [0:55] Press SPACE — multi-instance detection
-#   [1:00] Press R — start recording
-#   [1:10] Slowly move/rotate one tube (shows tracking continuity)
-#   [1:15] Press R — stop recording
-
-# SCENE 3: Mixed classes overlapping (45s)
-# Stack tubes partially overlapping (hardest case):
-#   - tube_1 (Screwcap) crossing over tube_4 (Push-on)
-#   - tube_8 (Other) next to tube_2 (Universal)
+# ─── SCREENSHOT 1: System overview (all 4 classes) ───────────────────────────
+# [0:10] Place tube_2, tube_1, tube_4, tube_8 in view
+# [0:15] SPACE — "Fig: all classes, YOLO26n"
 #
-# Actions:
-#   [1:20] Arrange overlapping tubes
-#   [1:30] Press SPACE — capture overlapping detection
-#   [1:35] Press M — cycle through all models capturing SPACE for each
-
-# SCENE 4: Screwcap confusion test (30s)
-# Place only Screwcap tubes (tube_1 variants) — this is the hardest class
+# ─── SCREENSHOT 2: Best accuracy model ───────────────────────────────────────
+# [0:20] M → switch to YOLOv8m (watch HUD show new model name)
+# [0:25] SPACE — "Fig: all classes, YOLOv8m"
 #
-# Actions:
-#   [2:05] Place 2–3 Screwcap tubes
-#   [2:10] Press SPACE on yolo26n
-#   [2:15] Press M → SPACE on yolov8m (expected: better Screwcap accuracy)
-
-# SCENE 5: Speed comparison (60s)
-# Single tube, cycle through all models watching FPS in HUD:
-#   yolo26n (~7 FPS) → yolov8m (~3 FPS) → yolov9c (~2 FPS) → yolo11n (~7 FPS)
+# ─── SCREENSHOT 3–4: Architecture comparison ─────────────────────────────────
+# [0:30] M → YOLOv9c
+# [0:35] SPACE — "Fig: all classes, YOLOv9c"
+# [0:40] M → YOLO11n
+# [0:45] SPACE — "Fig: all classes, YOLO11n"
 #
-# Actions:
-#   [2:35] Place one Universal tube in center
-#   [2:40] Press R — start recording
-#   [2:45] Press M every 10s (4 models × 10s = 40s)
-#   [3:25] Press R — stop recording
-
-# SCENE 6: Empty scene (15s)
-# Remove all tubes — verify no false positives on bare matte surface
+# ─── RECORDING 1: Speed comparison across models ─────────────────────────────
+# [0:50] M → back to YOLO26n
+# [0:55] R — start recording
+# [1:00] Keep single tube (Universal) visible
+# [1:10] M (switch to YOLOv8m, watch FPS drop)
+# [1:20] M (switch to YOLOv9c)
+# [1:30] M (switch to YOLO11n)
+# [1:40] R — stop recording
 #
-# Actions:
-#   [3:30] Clear all tubes
-#   [3:35] Press SPACE — should show clean panels with no detections
-
-# END: Press Q to quit. Session summary prints in terminal.
-
+# ─── SCREENSHOT 5: Multi-instance detection ──────────────────────────────────
+# [1:45] M → back to YOLO26n
+# [1:50] Place 3–4 Push-on tubes (tubes 4, 5, 6, 7)
+# [1:55] SPACE — "Fig: multi-instance"
+#
+# ─── SCREENSHOT 6: Hardest class (Screwcap) ──────────────────────────────────
+# [2:00] Remove Push-on tubes, place 2–3 Screwcap tubes
+# [2:05] SPACE — "Fig: Screwcap, YOLO26n"
+# [2:10] M → YOLOv8m
+# [2:15] SPACE — "Fig: Screwcap, YOLOv8m (expect better accuracy)"
+#
+# ─── SCREENSHOT 7: Depth heatmap ─────────────────────────────────────────────
+# [2:20] Keep tubes in place (any class)
+#        SPACE — "Fig: depth heatmap + mask overlay (TR + BR panels)"
+#
+# ─── SCREENSHOT 8: Empty scene (no false positives) ──────────────────────────
+# [2:25] Remove ALL tubes from surface
+# [2:30] SPACE — "Fig: clean scene, no detections"
+#
+# ─── END ─────────────────────────────────────────────────────────────────────
+# [2:35] Q — quit
+#        Session summary prints in terminal (capture terminal screenshot too)
+#
 # ═══════════════════════════════════════════════════════════════════════════════
-# TOTAL TIME: ~4 minutes
 # OUTPUTS:
-#   - 8–10 snapshots in runs/captures/snapshots/
-#   - 2 recordings in runs/captures/rec_*/
-#   - Terminal session summary
+#   runs/captures/snapshots/  — 8 snapshots (4 PNGs each = 32 files)
+#   runs/captures/rec_*/      — 1 recording (speed comparison video)
+#   Terminal screenshot        — session summary with model names + FPS
+#
+# REPORT FIGURES FROM THIS SESSION:
+#   Fig 1: System overview (4 classes, YOLO26n) — snapshot 1
+#   Fig 2: Model comparison (4 snapshots, same scene, different models)
+#   Fig 3: Multi-instance detection — snapshot 5
+#   Fig 4: Screwcap comparison (26n vs v8m) — snapshots 6–7
+#   Fig 5: Depth integration (heatmap + masks) — snapshot 8 (TR+BR panels)
+#   Fig 6: Empty scene validation — snapshot 9
+#   Fig 7: Speed/FPS comparison — recording 1 (extract key frames)
 # ═══════════════════════════════════════════════════════════════════════════════
