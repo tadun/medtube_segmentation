@@ -38,6 +38,13 @@ YOLOv9c-seg/
 
 # macOS
 .DS_Store
+
+# Runtime caches
+.matplotlib/
+.ultralytics/
+
+# Third-party SDKs (large, not part of this project)
+librealsense/
 report/*.aux
 report/*.bbl
 report/*.bcf

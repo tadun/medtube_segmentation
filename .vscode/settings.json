@@ -2,5 +2,6 @@
   "python.defaultInterpreterPath": "${workspaceFolder}/rs_env/bin/python",
   "python.analysis.extraPaths": [
     "${workspaceFolder}/rs_env/lib/python3.12/site-packages"
-  ]
+  ],
+  "cmake.sourceDirectory": "/Users/tadun/Documents/2026/Final Project/medtube_segmentation/librealsense"
 }
