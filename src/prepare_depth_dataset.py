@@ -39,19 +39,10 @@ def depth_to_turbo(depth_mm: np.ndarray) -> np.ndarray:
     return colour
 
 
-def make_rgbd(rgb: np.ndarray, depth_mm: np.ndarray) -> np.ndarray:
-    """Create 4-channel RGBD image (uint8). Depth normalised to 0–255."""
-    valid = depth_mm > 0
-    if valid.any():
-        vals = depth_mm[valid].astype(np.float32)
-        d_min, d_max = float(np.percentile(vals, 2)), float(np.percentile(vals, 98))
-        if d_max <= d_min:
-            d_max = d_min + 1.0
-        d_norm = np.zeros_like(depth_mm, dtype=np.uint8)
-        d_norm[valid] = ((vals - d_min) / (d_max - d_min) * 255).clip(0, 255).astype(np.uint8)
-    else:
-        d_norm = np.zeros_like(depth_mm, dtype=np.uint8)
-    return np.dstack((rgb, d_norm))
+def make_rgbd(rgb: np.ndarray, depth_colour: np.ndarray) -> np.ndarray:
+    """Create 4-channel RGBD image. Depth is converted from colourised to grayscale."""
+    d_gray = cv2.cvtColor(depth_colour, cv2.COLOR_BGR2GRAY)
+    return np.dstack((rgb, d_gray))
 
 
 def main():
@@ -72,26 +63,36 @@ def main():
     total = 0
 
     for tube in tube_dirs:
-        rgb_files = sorted(tube.glob("rgb_*.png"))
+        # Structure: tube_*/rgb/tube_*_rgb_NNN.png + tube_*/depth/tube_*_depth_NNN.png
+        rgb_dir = tube / "rgb"
+        depth_src_dir = tube / "depth"
+        if not rgb_dir.exists() or not depth_src_dir.exists():
+            continue
+
+        rgb_files = sorted(rgb_dir.glob("*.png"))
         for rgb_path in rgb_files:
-            # Find matching depth file
-            depth_path = tube / rgb_path.name.replace("rgb_", "depth_")
+            # Match rgb → depth by replacing _rgb_ with _depth_ in filename
+            depth_name = rgb_path.name.replace("_rgb_", "_depth_")
+            depth_path = depth_src_dir / depth_name
             if not depth_path.exists():
                 continue
 
             rgb = cv2.imread(str(rgb_path))
-            depth_mm = cv2.imread(str(depth_path), cv2.IMREAD_UNCHANGED)
-            if rgb is None or depth_mm is None:
+            depth_img = cv2.imread(str(depth_path))
+            if rgb is None or depth_img is None:
                 continue
+
+            # Resize depth to match RGB if needed
+            if depth_img.shape[:2] != rgb.shape[:2]:
+                depth_img = cv2.resize(depth_img, (rgb.shape[1], rgb.shape[0]))
 
             stem = f"{tube.name}_{rgb_path.stem}"
 
-            # Depth-only (TURBO heatmap)
-            turbo = depth_to_turbo(depth_mm)
-            cv2.imwrite(str(depth_dir / f"{stem}.png"), turbo)
+            # Depth-only (use captured depth heatmap directly)
+            cv2.imwrite(str(depth_dir / f"{stem}.png"), depth_img)
 
-            # RGB-D (4-channel — save as 4-channel PNG)
-            rgbd = make_rgbd(rgb, depth_mm)
+            # RGB-D (4-channel: RGB + depth grayscale)
+            rgbd = make_rgbd(rgb, depth_img)
             cv2.imwrite(str(rgbd_dir / f"{stem}.png"), rgbd)
 
             total += 1
