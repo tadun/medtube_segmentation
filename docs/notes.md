@@ -869,3 +869,100 @@ Curated list of peer-reviewed and closely relevant references only. BibTeX keys 
 3. **#1 Depth-only/RGB-D training** — depth ablation experiment (train on depth heatmap images)
 4. **Capture qualitative screenshots** — use Space key during stream with different models and tube arrangements
 5. **Write the report** — all quantitative data is ready
+
+
+## 22. Model Comparison Eval — 2026-07-20
+
+Eval run via `tools/eval_comparison.py` on the local machine (Apple M1 Max, CPU).
+
+**Important caveats:**
+- RGB models evaluated on the held-out **test split** of MedTube-2.yolov8 (450 images, nc=4).
+- RGBD and depth models evaluated on their respective full datasets (train=val=test in the data yaml — metrics are therefore **upper-bound estimates** for those models).
+- `yolo26n_balanced` skipped: nc=7 is incompatible with the nc=4 evaluation set.
+
+| Model | Input | Box P | Box R | Box mAP50 | Box mAP50-95 | Mask P | Mask R | Mask mAP50 | **Mask mAP50-95** | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| YOLOv8m-seg  (100 ep, local) | RGB | 0.9901 | 0.9912 | 0.9848 | 0.9681 | 0.9906 | 0.9929 | 0.9848 | **0.9054** | RGB 3-ch | MedTube-2 test split |
+| YOLOv9c-seg  (32 ep, Colab) | RGB | 0.9902 | 0.9929 | 0.9832 | 0.9409 | 0.9902 | 0.9929 | 0.9832 | **0.7988** | RGB 3-ch | MedTube-2 test split (early stop) |
+| yolo26n      (nc=4, RGB) | RGB | 0.9904 | 0.9906 | 0.9832 | 0.9505 | 0.9904 | 0.9906 | 0.9832 | **0.82** | RGB 3-ch | MedTube-2 test split |
+| YOLO11n-RGBD (100 ep, local) | RGBD | 0.9991 | 0.9993 | 0.9945 | 0.9884 | 0.9991 | 0.9993 | 0.9945 | **0.9287** | RGBD 4-ch | full RGBD split (train=val=test) |
+| YOLO11n-RGBD (37 ep, Colab) | RGBD | 0.9965 | 0.9968 | 0.993 | 0.9586 | 0.9965 | 0.9968 | 0.993 | **0.8704** | RGBD 4-ch | full RGBD split (train=val=test, early stop) |
+| yolo26n-depth (nc=4, depth) | Depth | 0.989 | 0.987 | 0.994 | **0.927** | N/A | N/A | N/A | N/A | Depth-only 1-ch | full depth split (train=val=test) — detection-only model (no seg head; box metrics only) |
+
+### Skipped models
+
+- **yolo26n_balanced (nc=7)**: Incompatible class count (nc=7 vs dataset nc=4); likely trained on a different label schema.
+
+
+<details>
+<summary>Raw JSON results</summary>
+
+```json
+{
+  "YOLOv8m-seg  (100 ep, local)": {
+    "box_P": 0.9901,
+    "box_R": 0.9912,
+    "box_mAP50": 0.9848,
+    "box_mAP50-95": 0.9681,
+    "mask_P": 0.9906,
+    "mask_R": 0.9929,
+    "mask_mAP50": 0.9848,
+    "mask_mAP50-95": 0.9054,
+    "note": "RGB 3-ch | MedTube-2 test split"
+  },
+  "YOLOv9c-seg  (32 ep, Colab)": {
+    "box_P": 0.9902,
+    "box_R": 0.9929,
+    "box_mAP50": 0.9832,
+    "box_mAP50-95": 0.9409,
+    "mask_P": 0.9902,
+    "mask_R": 0.9929,
+    "mask_mAP50": 0.9832,
+    "mask_mAP50-95": 0.7988,
+    "note": "RGB 3-ch | MedTube-2 test split (early stop)"
+  },
+  "yolo26n      (nc=4, RGB)": {
+    "box_P": 0.9904,
+    "box_R": 0.9906,
+    "box_mAP50": 0.9832,
+    "box_mAP50-95": 0.9505,
+    "mask_P": 0.9904,
+    "mask_R": 0.9906,
+    "mask_mAP50": 0.9832,
+    "mask_mAP50-95": 0.82,
+    "note": "RGB 3-ch | MedTube-2 test split"
+  },
+  "YOLO11n-RGBD (100 ep, local)": {
+    "box_P": 0.9991,
+    "box_R": 0.9993,
+    "box_mAP50": 0.9945,
+    "box_mAP50-95": 0.9884,
+    "mask_P": 0.9991,
+    "mask_R": 0.9993,
+    "mask_mAP50": 0.9945,
+    "mask_mAP50-95": 0.9287,
+    "note": "RGBD 4-ch | full RGBD split (train=val=test)"
+  },
+  "YOLO11n-RGBD (37 ep, Colab)": {
+    "box_P": 0.9965,
+    "box_R": 0.9968,
+    "box_mAP50": 0.993,
+    "box_mAP50-95": 0.9586,
+    "mask_P": 0.9965,
+    "mask_R": 0.9968,
+    "mask_mAP50": 0.993,
+    "mask_mAP50-95": 0.8704,
+    "note": "RGBD 4-ch | full RGBD split (train=val=test, early stop)"
+  },
+  "yolo26n-depth (nc=4, depth)": {
+    "box_P": 0.989,
+    "box_R": 0.987,
+    "box_mAP50": 0.994,
+    "box_mAP50-95": 0.927,
+    "mask": "N/A — detection-only model (no segmentation head)",
+    "note": "Depth-only 1-ch | full depth split (train=val=test)"
+  }
+}
+```
+
+</details>

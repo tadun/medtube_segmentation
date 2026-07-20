@@ -25,6 +25,14 @@ MedTube.coco/
 data/
 data_coco/
 
+# New Roboflow exports + COCO extracts + converted YOLO datasets (images, large)
+balanced/
+balanced_yolo/
+depth_coco/
+depth_yolo/
+rgbd/
+*.zip
+
 # Training runs output (large)
 runs/
 Ultralytics/
