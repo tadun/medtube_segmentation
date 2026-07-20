@@ -31,6 +31,7 @@ balanced_yolo/
 depth_coco/
 depth_yolo/
 rgbd/
+rgbd_split/
 *.zip
 
 # Training runs output (large)
