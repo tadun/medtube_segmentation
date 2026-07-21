@@ -77,6 +77,11 @@ MODELS = {
         DEPTH_DATA,
         "Depth-only 1-ch | full depth split (train=val=test)",
     ),
+    "yolo26n_depth-2 (nc=4, depth, local)": (
+        PROJECT / "weights/yolo26n_depth-2.pt",
+        DEPTH_DATA,
+        "Depth-only 1-ch | full depth split (local training)",
+    ),
 }
 
 SKIPPED = {
@@ -164,7 +169,8 @@ INPUT_TYPE = {
     "yolo26n      (nc=4, RGB)":       "RGB",
     "YOLO11n-RGBD (100 ep, local)":   "RGBD",
     "YOLO11n-RGBD (37 ep, Colab)":    "RGBD",
-    "yolo26n-depth (nc=4, depth)":    "Depth",
+    "yolo26n-depth (nc=4, depth)":              "Depth",
+    "yolo26n_depth-2 (nc=4, depth, local)":   "Depth",
 }
 
 for name, r in results_all.items():

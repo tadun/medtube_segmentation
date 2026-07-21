@@ -1,10 +1,12 @@
 """
-Train yolo26n-seg with 4-channel RGBA input (RGB + Depth).
+Train YOLO11n-seg with 4-channel RGBA input (RGB + Depth).
 
-Same channel-patching approach as the YOLO11n-RGBD run:
-  - Load yolo26n.pt (seg base, nc=4)
+Uses the properly split rgbd_split/ dataset (70/15/15, seed=42) so
+validation and test metrics are trustworthy.
+
+  - Load yolo11n.pt (seg base, nc=4)
   - Patch first conv: 3ch → 4ch (depth channel initialised to zero)
-  - Train on rgbd/data.yaml (RGBA images, 3000 images, nc=4)
+  - Train on rgbd_split/data.yaml (RGBA images, 2100 train / 450 val / 450 test)
 
 Usage:
     rs_env/bin/python tools/train_yolo26n_rgbd.py
@@ -16,8 +18,8 @@ from pathlib import Path
 from ultralytics import YOLO
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DATA_YAML    = str(PROJECT_ROOT / "rgbd" / "data.yaml")
-BASE_WEIGHT  = str(PROJECT_ROOT / "weights" / "yolo26n.pt")
+DATA_YAML    = str(PROJECT_ROOT / "rgbd_split" / "data.yaml")
+BASE_WEIGHT  = str(PROJECT_ROOT / "weights" / "yolo11n.pt")
 
 # ── Load seg base ────────────────────────────────────────────────────────────
 model = YOLO(BASE_WEIGHT)
@@ -56,8 +58,8 @@ model.train(
     save_period = 10,
     workers     = 0,
     device      = "cpu",
-    project     = str(PROJECT_ROOT / "runs" / "yolo26n_rgbd"),
-    name        = "yolo26n-RGBD",
+    project     = str(PROJECT_ROOT / "runs" / "yolo11n_rgbd_split"),
+    name        = "YOLO11n-RGBD",
     exist_ok    = False,
     # Disable colour augments — depth channel has no colour information
     hsv_h=0.0, hsv_s=0.0, hsv_v=0.0,
