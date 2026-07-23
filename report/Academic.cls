@@ -54,7 +54,9 @@
 \renewcommand{\maketitle}{%
   \begin{titlepage}
     \centering
-    \vspace*{1cm}
+    \vspace*{0.5cm}
+    \includegraphics[width=0.4\textwidth]{figures/uob_logo.png}\par
+    \vspace{1cm}
     {\Large\bfseries University of Birmingham\par}
     \vspace{0.5cm}
     {\large School of Engineering\par}

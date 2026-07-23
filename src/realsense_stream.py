@@ -517,25 +517,22 @@ def main():
     print(f"\033[36m[info]\033[0m Loading weights: {weights_path.name}")
 
     # Discover all available .pt model files for live switching (M key)
-    # Order: yolo26n, yolov8m, yolov9c, yolo11n
+    # Order: yolo26n (fastest), yolov8m (best accuracy), yolo11n (nano baseline)
     project_root = _PROJECT_ROOT
     weights_dir  = project_root / "weights"
-    _ordered_stems = ["yolo26n", "yolo11n"]  # from weights/ dir, in desired order
-    _found = {p.stem: p for p in weights_dir.glob("*.pt")
-              if p.stem not in ("yolov8m-seg", "yolo11m-seg", "rfdetr", "yolo11n_weights")}
-    model_paths: list[Path] = [_found[s] for s in _ordered_stems if s in _found]
-    # Add remaining from weights/ not already included
-    for p in sorted(_found.values()):
-        if p not in model_paths:
-            model_paths.append(p)
-    # YOLOv8m best.pt
+    model_paths: list[Path] = []
+    # YOLO26n — default/fastest
+    yolo26n_path = weights_dir / "yolo26n.pt"
+    if yolo26n_path.exists():
+        model_paths.append(yolo26n_path)
+    # YOLOv8m best.pt — best RGB accuracy
     yolov8m_best = project_root / "runs" / "segment" / "runs" / "2026-07-12_22-48-54" / "YOLOv8-seg" / "weights" / "best.pt"
     if yolov8m_best.exists():
-        model_paths.insert(1, yolov8m_best)  # after yolo26n
-    # YOLOv9c best.pt
-    yolov9c_best = project_root / "YOLOv9c-seg" / "weights" / "best.pt"
-    if yolov9c_best.exists():
-        model_paths.insert(2 if yolov8m_best.exists() else 1, yolov9c_best)  # after v8m
+        model_paths.append(yolov8m_best)
+    # YOLO11n — nano baseline
+    yolo11n_path = weights_dir / "yolo11n.pt"
+    if yolo11n_path.exists():
+        model_paths.append(yolo11n_path)
 
     # Build display names for each model (use architecture yaml where possible)
     def _model_display_name(p: Path) -> str:
