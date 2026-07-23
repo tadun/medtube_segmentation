@@ -1,6 +1,7 @@
 \documentclass{Academic}
 \addbibresource{references.bib}
 
+
 \begin{document}
 %TC:ignore
 \myabstract{\input{abstract}}
@@ -37,14 +38,23 @@ Three depth post-processing filters were applied in sequence through the libreal
 
 \subsection{Tube specimens and classification scheme}
 
-Unused VACUETTE blood collection tubes (Greiner Bio-One, Kremsm\"{u}nster, Austria) were used throughout. No patient samples or biohazardous material was involved; ethical approval was obtained from the University of Birmingham. Four classes were defined based on cap closure mechanism, which determines disassembly and recycling pathway~\supercite{lee2004medical}:
+Unused VACUETTE blood collection tubes (Greiner Bio-One, Kremsm\"{u}nster, Austria) were used throughout. No patient samples or biohazardous material was involved; ethical approval was obtained from the University of Birmingham. Four classes were defined based on cap closure mechanism, which determines disassembly and recycling pathway~\supercite{lee2004medical}. \Cref{tab:tube_classes} summarises the classification scheme.
 
-\begin{itemize}[nosep]
-  \item \textbf{Universal}: 31\,mm screw-cap tubes for general sample collection.
-  \item \textbf{Push-on}: 16\,mm push-fit cap tubes, mainly used for blood collection.
-  \item \textbf{Screwcap}: Other screw-threaded tubes of varying diameter.
-  \item \textbf{Other}: Tubes with non-standard closures or mixed cap types, typically requiring manual handling for recycling.
-\end{itemize}
+\begin{table}[!htb]
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Class} & \textbf{Cap type} & \textbf{Description} \\
+    \midrule
+    Universal  & 31\,mm screw-cap    & General sample collection tubes \\
+    Push-on    & 16\,mm push-fit cap & Blood collection tubes (most common) \\
+    Screwcap   & Threaded (varied)   & Other screw-threaded tubes of varying diameter \\
+    Other      & Non-standard        & Mixed cap types requiring manual handling \\
+    \bottomrule
+  \end{tabular}
+  \caption{Tube classification scheme based on cap closure mechanism.}
+  \label{tab:tube_classes}
+\end{table}
 
 \subsection{Data collection and annotation}
 
@@ -56,8 +66,6 @@ The annotated dataset was exported in YOLOv8 segmentation format and split into 
 
 \begin{table}[!htb]
   \centering
-  \caption{Class distribution across dataset splits. Counts reflect individual tube instances.}
-  \label{tab:class_dist}
   \begin{tabular}{lrrrr}
     \toprule
     \textbf{Class} & \textbf{Total} & \textbf{Train} & \textbf{Valid} & \textbf{Test} \\
@@ -70,19 +78,30 @@ The annotated dataset was exported in YOLOv8 segmentation format and split into 
     \textbf{Total} & \textbf{3\,037} & \textbf{2\,130} & \textbf{452} & \textbf{455} \\
     \bottomrule
   \end{tabular}
+  \caption{Class distribution across dataset splits. Counts reflect individual tube instances.}
+  \label{tab:class_dist}
 \end{table}
 
 \subsection{Model architectures}
 
-Five models were selected for comparison, spanning different scales and input modalities:
+Five models were selected for comparison, spanning different scales and input modalities. \Cref{tab:architectures} summarises their key properties.
 
-\begin{enumerate}[nosep]
-  \item \textbf{YOLOv8m-seg}~\supercite{jocher2023yolov8}: Medium-scale anchor-free CNN with a CSPDarknet backbone and Feature Pyramid Network (FPN)~\supercite{lin2017fpn} neck; 27.2\,M parameters.
-  \item \textbf{YOLO11n-seg}~\supercite{jocher2024yolo11}: Nano-scale variant with improved feature extraction; 2.8\,M parameters.
-  \item \textbf{YOLO26n-seg}: Latest nano architecture with end-to-end NMS-free inference; 2.7\,M parameters.
-  \item \textbf{YOLO11n-RGBD}: YOLO11n-seg with the input layer modified to accept four-channel RGBD images (RGB + aligned 16-bit depth normalised to 0--255); 2.8\,M parameters.
-  \item \textbf{YOLO26n-depth}: YOLO26n-seg with the input layer modified to accept single-channel depth images; 2.7\,M parameters.
-\end{enumerate}
+\begin{table}[!htb]
+  \centering
+  \begin{tabular}{llcl}
+    \toprule
+    \textbf{Model} & \textbf{Input} & \textbf{Params} & \textbf{Key features} \\
+    \midrule
+    YOLOv8m-seg  & RGB (3-ch)  & 27.2\,M & CSPDarknet + FPN neck \\
+    YOLO11n-seg  & RGB (3-ch)  & 2.8\,M  & Improved feature extraction \\
+    YOLO26n-seg  & RGB (3-ch)  & 2.7\,M  & NMS-free end-to-end inference \\
+    YOLO11n-RGBD & RGBD (4-ch) & 2.8\,M  & Modified input layer for depth \\
+    YOLO26n-depth& Depth (1-ch)& 2.7\,M  & Single-channel depth input \\
+    \bottomrule
+  \end{tabular}
+  \caption{Model architectures compared in this study.}
+  \label{tab:architectures}
+\end{table}
 
 \subsection{Training configuration}
 
@@ -110,15 +129,13 @@ All RGB models were evaluated on the 450-image held-out test split using standar
 
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=0.8\columnwidth]{figures/fig_all_classes.png}
+  \includegraphics[width=\columnwidth]{figures/fig_all_classes.png}
   \caption{All four tube classes detected simultaneously with YOLO26n-seg. Universal (red, 0.97), Push-on (blue, 0.96), Screwcap (green, 0.96), and Other (yellow, 0.96). Masks show pixel-level segmentation boundaries.}
   \label{fig:all_classes}
 \end{figure}
 
 \begin{table}[!htb]
   \centering
-  \caption{Model comparison at 640$\times$640. Inference on M1~Max CPU. Sorted by mask mAP\textsubscript{50--95}.}
-  \label{tab:model_comparison}
   \begin{tabular}{llcccc}
     \toprule
     \textbf{Model} & \textbf{Input} & \textbf{Params} & \textbf{Box mAP\textsubscript{50--95}} & \textbf{Mask mAP\textsubscript{50--95}} & \textbf{ms/img} \\
@@ -130,6 +147,8 @@ All RGB models were evaluated on the 450-image held-out test split using standar
     YOLO26n-depth & Depth & 2.7\,M  & 0.919 & 0.804 & 22.8 \\
     \bottomrule
   \end{tabular}
+  \caption{Model comparison at 640$\times$640. Inference on M1~Max CPU. Sorted by mask mAP\textsubscript{50--95}.}
+  \label{tab:model_comparison}
 \end{table}
 
 \subsection{Depth-channel experiments}
@@ -146,8 +165,6 @@ The practical value of depth-based classification extends beyond accuracy. In cl
 
 \begin{table}[!htb]
   \centering
-  \caption{Per-class results for YOLOv8m-seg (best checkpoint, epoch~85) on 449 test images.}
-  \label{tab:perclass}
   \begin{tabular}{lcccc}
     \toprule
     \textbf{Class} & \textbf{Box mAP\textsubscript{50}} & \textbf{Box mAP\textsubscript{50--95}} & \textbf{Mask mAP\textsubscript{50}} & \textbf{Mask mAP\textsubscript{50--95}} \\
@@ -159,11 +176,13 @@ The practical value of depth-based classification extends beyond accuracy. In cl
     Universal  & 0.995 & 0.993 & 0.995 & 0.887 \\
     \bottomrule
   \end{tabular}
+  \caption{Per-class results for YOLOv8m-seg (best checkpoint, epoch~85) on 449 test images.}
+  \label{tab:perclass}
 \end{table}
 
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=0.7\columnwidth]{figures/fig_confusion_matrix.png}
+  \includegraphics[width=\columnwidth]{figures/fig_confusion_matrix.png}
   \caption{Normalised confusion matrix for YOLOv8m-seg on the 450-image test split. Diagonal values close to 1.0 indicate high classification accuracy. The main source of confusion is between Screwcap and Push-on classes, consistent with their visual similarity.}
   \label{fig:confusion}
 \end{figure}
@@ -175,7 +194,7 @@ The YOLOv8m-seg training run reached peak validation mask mAP\textsubscript{50--
 \begin{figure}[!htb]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_training_curves.png}
-  \caption{YOLOv8m-seg training curves over 100 epochs. Top row: box, segmentation, and classification losses for training (blue) and validation (orange). Bottom row: precision, recall, mAP\textsubscript{50}, and mAP\textsubscript{50--95} on the validation set.}
+  \caption{YOLOv8m-seg training and validation curves over 100 epochs. Row~1: training losses (box, segmentation, classification, DFL, semantic) and box precision. Row~2: box recall, box mAP\textsubscript{50}, box mAP\textsubscript{50--95}, and validation losses. Row~3: validation DFL and semantic losses, mask precision, recall, mAP\textsubscript{50}, and mAP\textsubscript{50--95}. Blue dots show per-epoch values; orange dashed lines show smoothed trends.}
   \label{fig:training}
 \end{figure}
 
@@ -192,20 +211,13 @@ A live inference pipeline was implemented using the YOLO26n-seg model (selected 
 
 Class-specific colour coding (Universal\,=\,red, Screwcap\,=\,green, Push-on\,=\,blue, Other\,=\,yellow) provides immediate visual feedback. Each detected tube is annotated with its class label and confidence score. Users can switch between all trained models at runtime using the M key, allowing direct visual comparison of model outputs on the same scene without restarting the application. The pipeline also supports snapshot capture (saving all four panels as separate PNG files) and continuous recording at 2\,fps for later review.
 
-The system was tested with up to four tubes simultaneously in the field of view. \Cref{fig:multi_instance} shows successful detection of multiple Push-on tubes in a single frame, demonstrating that the model handles multi-instance scenarios without confusion between adjacent objects. \Cref{fig:realtime} shows a single-tube detection example during live streaming, illustrating the clean mask boundaries and confidence scores produced by the system in real time. The pipeline maintains interactive frame rates (30--45\,fps for nano models, 9--10\,fps for YOLOv8m) on the M1~Max CPU, showing the system is practical for deployment-stage monitoring.
+The system was tested with up to four tubes simultaneously in the field of view. \Cref{fig:inference_pair} shows both a single-tube detection and a multi-instance scenario, demonstrating that the model handles multiple adjacent objects without confusion. The pipeline maintains interactive frame rates (30--45\,fps for nano models, 9--10\,fps for YOLOv8m) on the M1~Max CPU, showing the system is practical for deployment-stage monitoring.
 
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=0.75\columnwidth]{figures/fig_realtime_inference.png}
-  \caption{Single-tube real-time detection (YOLO26n-seg): a Universal tube correctly identified with confidence 0.93 and precise mask boundaries during live streaming.}
-  \label{fig:realtime}
-\end{figure}
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=0.75\columnwidth]{figures/fig_multi_instance.png}
-  \caption{Multi-instance detection: four Push-on tubes detected simultaneously with confidence scores of 0.82--0.97. The model correctly segments each tube instance without merging adjacent objects.}
-  \label{fig:multi_instance}
+  \includegraphics[width=\columnwidth]{figures/fig_inference_pair.png}
+  \caption{Live inference examples. Left: single Universal tube detected (0.93). Right: four Push-on tubes detected simultaneously (0.82--0.97), showing correct multi-instance segmentation without merging adjacent objects.}
+  \label{fig:inference_pair}
 \end{figure}
 
 %%====================================================================
@@ -220,20 +232,13 @@ Importantly, adding a depth channel to the nano architecture (YOLO11n-RGBD) reco
 
 \subsection{Class-level performance and annotation quality}
 
-Screwcap exhibited the lowest detection mAP\textsubscript{50} (0.954 versus 0.995 for other classes). This is partly explained by the lower instance count (716 versus 906 for Push-on) and the visual similarity between Screwcap and Universal tubes, both of which have threaded closures. \Cref{fig:false_positive} shows a live example of this confusion: a Screwcap tube misclassified as Push-on with low confidence (0.57). The larger YOLOv8m-seg model correctly identifies the same tubes as Screwcap with high confidence (\Cref{fig:screwcap_correct}), illustrating the accuracy benefit of larger architectures. The gap between mAP\textsubscript{50} and mAP\textsubscript{50--95} (0.985 versus 0.806 overall) suggests that annotation polygon coarseness, rather than model failure, limits performance at higher IoU thresholds. Finer polygon annotation or re-annotation with newer SAM versions could reduce this gap.
+Screwcap exhibited the lowest detection mAP\textsubscript{50} (0.954 versus 0.995 for other classes). This is partly explained by the lower instance count (716 versus 906 for Push-on) and the visual similarity between Screwcap and Universal tubes, both of which have threaded closures. \Cref{fig:screwcap_comparison} shows this in practice: the nano model (YOLO26n-seg) misclassifies one Screwcap tube as Push-on with low confidence (0.57), whilst the larger YOLOv8m-seg correctly identifies all three tubes with high confidence (0.91--0.97). The gap between mAP\textsubscript{50} and mAP\textsubscript{50--95} (0.985 versus 0.806 overall) suggests that annotation polygon coarseness, rather than model failure, limits performance at higher IoU thresholds. Finer polygon annotation or re-annotation with newer SAM versions could reduce this gap.
 
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=0.75\columnwidth]{figures/fig_false_positive.png}
-  \caption{Misclassification example (YOLO26n-seg): one Screwcap tube is incorrectly labelled as Push-on (confidence 0.57) due to visual similarity of the cap profiles at this angle. The two remaining Screwcap tubes are correctly detected (0.96--0.97).}
-  \label{fig:false_positive}
-\end{figure}
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=0.75\columnwidth]{figures/fig_screwcap_yolov8m.png}
-  \caption{Same scene evaluated with YOLOv8m-seg: all three Screwcap tubes are correctly classified with high confidence (0.91--0.97), demonstrating the accuracy advantage of larger models.}
-  \label{fig:screwcap_correct}
+  \includegraphics[width=\columnwidth]{figures/fig_screwcap_comparison.png}
+  \caption{Screwcap detection comparison. Left: YOLO26n-seg misclassifies one tube as Push-on (0.57). Right: YOLOv8m-seg correctly identifies all three as Screwcap (0.91--0.97), demonstrating the accuracy benefit of larger architectures.}
+  \label{fig:screwcap_comparison}
 \end{figure}
 
 Training on the class-balanced dataset confirmed that the imbalance affected results: minority classes (Screwcap, Universal) showed more consistent detection when class representation was equalised during training.
@@ -246,7 +251,7 @@ The depth-only model's strong performance (0.804 mask mAP\textsubscript{50--95})
 
 \begin{figure}[!htb]
   \centering
-  \includegraphics[width=0.75\columnwidth]{figures/fig_depth_heatmap.png}
+  \includegraphics[width=\columnwidth]{figures/fig_depth_heatmap.png}
   \caption{Depth heatmap from the Intel RealSense D415 (TURBO colourmap, 2nd--98th percentile range). Warmer colours indicate greater distance from the camera. The flat matte surface provides a uniform depth baseline against which tube geometry is clearly distinguishable.}
   \label{fig:depth}
 \end{figure}
@@ -279,9 +284,9 @@ The broader societal impact extends beyond waste reduction. By demonstrating tha
 
 This project developed and evaluated a real-time instance segmentation system for automated classification of medical tubes by cap type, as the upstream vision component of an AI-enabled segregation pipeline. A custom dataset of 3\,000 annotated RGB images across four clinically relevant tube classes was created using an Intel RealSense D415 camera and SAM\,3-assisted annotation. Five models were compared across RGB, RGBD, and depth-only modalities: YOLO11n-RGBD achieved the highest mask accuracy (mAP\textsubscript{50--95}\,=\,0.929), YOLOv8m-seg the highest among RGB-only models (0.905), and YOLO26n-seg the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}). Depth-only segmentation achieved 0.804 mask mAP\textsubscript{50--95}, showing that tube geometry alone provides enough information for classification and offering robustness to the reflective and transparent surface properties of medical tubes.
 
-A real-time inference pipeline was implemented and demonstrated with live camera input, rendering segmentation masks over both RGB and depth streams at interactive frame rates. The system supports runtime model switching, multi-instance detection, and continuous recording for quality assurance applications. The pipeline grid display (\\Cref{fig:pipeline}) provides operators with simultaneous access to RGB detection, depth geometry, and mask alignment views.
+A real-time inference pipeline was implemented and demonstrated with live camera input, rendering segmentation masks over both RGB and depth streams at interactive frame rates. The system supports runtime model switching, multi-instance detection, and continuous recording for quality assurance applications. The pipeline grid display (\Cref{fig:pipeline}) provides operators with simultaneous access to RGB detection, depth geometry, and mask alignment views.
 
-The key finding of this work is that depth fusion offers a more efficient path to high accuracy than model scaling: the 2.8\\,M-parameter YOLO11n-RGBD exceeded the 27.2\\,M-parameter YOLOv8m-seg in mask accuracy whilst maintaining sub-25\\,ms inference times. This has direct implications for edge deployment in clinical settings, where computational resources are limited but accuracy requirements are high.
+The key finding of this work is that depth fusion offers a more efficient path to high accuracy than model scaling: the 2.8\,M-parameter YOLO11n-RGBD exceeded the 27.2\,M-parameter YOLOv8m-seg in mask accuracy whilst maintaining sub-25\,ms inference times. This has direct implications for edge deployment in clinical settings, where computational resources are limited but accuracy requirements are high.
 
 Future work should focus on two areas: (1)~validating the system under dynamic conditions with a physical conveyor belt and pneumatic sorting actuators, completing the integration with the downstream RL-driven segregation framework; and (2)~expanding the depth-annotated dataset with proper train/test separation and using the depth channel for three-dimensional tube localisation, enabling precise coordinate extraction for air-jet timing on a moving belt.
 
@@ -294,6 +299,7 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
 \singlespacing
 \emergencystretch 3em
 \hfuzz 1px
+\clearpage
 \printbibliography[heading=bibnumbered]
 
 \clearpage
@@ -304,7 +310,6 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
 
 \begin{table}[H]
   \centering
-  \caption{Abbreviations used in this report.}
   \begin{tabular}{ll}
     \toprule
     \textbf{Abbreviation} & \textbf{Definition} \\
@@ -327,6 +332,7 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
     YOLO   & You Only Look Once \\
     \bottomrule
   \end{tabular}
+  \caption{Abbreviations used in this report.}
 \end{table}
 
 \section{Depth pre-processing pipeline}
@@ -334,7 +340,6 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
 
 \begin{table}[H]
   \centering
-  \caption{Depth pre-processing filters applied to the RealSense D415 depth stream, in order of application.}
   \begin{tabular}{llp{6cm}}
     \toprule
     \textbf{Step} & \textbf{Filter} & \textbf{Description} \\
@@ -346,6 +351,7 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
     5 & Normalisation      & Maps valid depth values to 0--255 (uint8) for YOLO input channel. \\
     \bottomrule
   \end{tabular}
+  \caption{Depth pre-processing filters applied to the RealSense D415 depth stream, in order of application.}
 \end{table}
 
 \section{Data augmentation parameters}
@@ -353,7 +359,6 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
 
 \begin{table}[H]
   \centering
-  \caption{Full data augmentation configuration used for YOLOv8m-seg and YOLO11n-RGBD training. Parameters follow Ultralytics framework conventions.}
   \begin{tabular}{llp{6cm}}
     \toprule
     \textbf{Parameter} & \textbf{Value} & \textbf{Justification} \\
@@ -374,6 +379,7 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
     Random erasing   & 0.4   & Erases random patches (simulates partial occlusion) \\
     \bottomrule
   \end{tabular}
+  \caption{Full data augmentation configuration used for YOLOv8m-seg and YOLO11n-RGBD training. Parameters follow Ultralytics framework conventions.}
 \end{table}
 
 \section{Training hyperparameters}
@@ -381,7 +387,6 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
 
 \begin{table}[H]
   \centering
-  \caption{Training hyperparameters for YOLOv8m-seg (local M1~Max CPU run).}
   \begin{tabular}{ll}
     \toprule
     \textbf{Parameter} & \textbf{Value} \\
@@ -400,6 +405,7 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
     Workers          & 4 \\
     \bottomrule
   \end{tabular}
+  \caption{Training hyperparameters for YOLOv8m-seg (local M1~Max CPU run).}
 \end{table}
 
 \section{Hardware and software specifications}
@@ -407,7 +413,6 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
 
 \begin{table}[H]
   \centering
-  \caption{Hardware and software environment used for training and inference.}
   \begin{tabular}{ll}
     \toprule
     \textbf{Component} & \textbf{Specification} \\
@@ -428,6 +433,7 @@ The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance througho
     librealsense      & 2.56.2 \\
     \bottomrule
   \end{tabular}
+  \caption{Hardware and software environment used for training and inference.}
 \end{table}
 
 \end{appendices}

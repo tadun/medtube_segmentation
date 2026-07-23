@@ -14,6 +14,7 @@
 \RequirePackage{graphicx}
 \RequirePackage{booktabs}
 \RequirePackage{caption}
+\captionsetup[table]{position=below}
 \RequirePackage{subcaption}
 \RequirePackage{float}
 \RequirePackage{amsmath,amssymb}
@@ -55,10 +56,8 @@
   \begin{titlepage}
     \centering
     \vspace*{0.5cm}
-    \includegraphics[width=0.4\textwidth]{figures/uob_logo.png}\par
+    \hspace*{-2cm}\includegraphics[width=0.75\textwidth]{figures/uob_logo.png}\par
     \vspace{1cm}
-    {\Large\bfseries University of Birmingham\par}
-    \vspace{0.5cm}
     {\large School of Engineering\par}
     {\large \MyDepartment\par}
     \vspace{2cm}
