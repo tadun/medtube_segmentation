@@ -12,6 +12,10 @@ __pycache__/
 .ruff_cache/
 .ipynb_checkpoints/
 
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.vscode/
+pyrightconfig.json
+
 # ── macOS ──────────────────────────────────────────────────────────────────────
 .DS_Store
 
@@ -30,14 +34,10 @@ rgbd_split/
 runs/
 Ultralytics/
 
-# ── Pretrained / downloaded weights (not project-specific) ───────────────────
+# ── Model weights — only the two final inference models are committed ─────────
 *.pt
-\!weights/*.pt
-weights/rfdetr.pt
-weights/yolov8m-seg.pt
-weights/yolo11m-seg.pt
-weights/yolo11n.pt
-weights/yolo11n_weights.pt
+\!weights/yolo26n.pt
+\!weights/yolo26n_depth-2.pt
 
 # ── LaTeX build artefacts ─────────────────────────────────────────────────────
 report/*.aux
@@ -52,14 +52,11 @@ report/*.out
 report/*.pdf
 report/*.run.xml
 
-# ── Private development notes ─────────────────────────────────────────────────
-docs/notes.md
-
 # ── Third-party SDKs ──────────────────────────────────────────────────────────
 librealsense/
 
+# ── Zip archives (dataset exports) ────────────────────────────────────────────
+*.zip
+
 # ── Archived / superseded data ────────────────────────────────────────────────
 _archive/
-
-# ── Zip archives (dataset exports) ──────────────────────────────────────────
-*.zip
