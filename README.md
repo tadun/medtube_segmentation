@@ -38,32 +38,23 @@ medtube_segmentation/
 │   ├── compare_confusion_matrices.py
 │   ├── split_rgbd.py
 │   ├── rebalance_classes.py
-│   ├── coco_to_yolo_seg.py
 │   ├── preview_labels.py
-│   ├── inspect_ann.py
 │   ├── view_masks.py
 │   └── backup_dataset.sh
-├── notebooks/
-│   ├── train_colab_rgbd.ipynb      # Colab RGBD training
-│   ├── train_colab_depth_seg.ipynb # Colab depth-only training
-│   ├── train_colab_yolov9c.ipynb   # Colab YOLOv9c training
-│   └── eval_rfdetr.py
-├── weights/                    # Fine-tuned model weights (committed selectively)
-│   ├── yolo26n.pt              # YOLO26n-seg — RGB, best speed/accuracy
-│   ├── yolo26n_depth.pt        # YOLO26n-depth — depth-only
-│   ├── yolo26n_depth-2.pt      # YOLO26n-depth v2
-│   ├── yolo26n_balanced.pt     # YOLO26n — class-balanced dataset
-│   └── YOLO11n-RGBD/           # YOLO11n-RGBD training diagnostics
+├── weights/                    # Fine-tuned model weights for all five models
+│   ├── yolov8m_seg.pt          # YOLOv8m-seg — RGB (0.905 mask mAP)
+│   ├── yolo11n_seg.pt          # YOLO11n-seg — RGB nano
+│   ├── yolo26n.pt              # YOLO26n-seg — RGB nano, best speed/accuracy
+│   ├── yolo11n_rgbd.pt         # YOLO11n-RGBD — depth fusion (0.929 mask mAP)
+│   └── yolo26n_depth-2.pt      # YOLO26n-depth — depth-only (0.804 mask mAP)
 ├── report/
 │   ├── main.tex                # Project report (LaTeX)
 │   ├── references.bib
 │   ├── abstract.tex
 │   ├── Academic.cls
 │   └── figures/                # Generated and captured figures
-├── docs/
-│   └── demo_script.sh
 ├── stream.sh                   # Passwordless RealSense launcher (macOS)
-└── pyrightconfig.json
+└── .gitignore
 ```
 
 Large directories are gitignored and downloaded locally:
@@ -71,7 +62,6 @@ Large directories are gitignored and downloaded locally:
 | Directory | Contents | Source |
 |---|---|---|
 | `dataset/` | 30 × 100 raw RGB+depth frames | Captured locally |
-| `MedTube-2.yolov8/` | Primary annotated dataset (3,000 images) | Roboflow export |
 | `balanced_yolo/` | Class-balanced dataset variant | Roboflow export |
 | `depth_yolo/` | Depth-only dataset | `src/prepare_depth_dataset.py` |
 | `rgbd_split/` | RGBD dataset with 70/15/15 split | `tools/split_rgbd.py` |

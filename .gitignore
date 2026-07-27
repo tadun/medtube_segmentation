@@ -34,10 +34,13 @@ rgbd_split/
 runs/
 Ultralytics/
 
-# ── Model weights — only the two final inference models are committed ─────────
+# ── Model weights — all five final models committed ───────────────────────────
 *.pt
-\!weights/yolo26n.pt
-\!weights/yolo26n_depth-2.pt
+!weights/yolo26n.pt
+!weights/yolo26n_depth-2.pt
+!weights/yolov8m_seg.pt
+!weights/yolo11n_seg.pt
+!weights/yolo11n_rgbd.pt
 
 # ── LaTeX build artefacts ─────────────────────────────────────────────────────
 report/*.aux
