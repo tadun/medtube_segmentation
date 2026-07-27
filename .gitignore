@@ -1,62 +1,49 @@
-# Virtual environments
+# ── Virtual environments ──────────────────────────────────────────────────────
 rs_env/
 sort_env/
 .venv/
 
-# Python cache
+# ── Python cache ──────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 .mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
 
-# Dataset (large binary files — collect locally)
-dataset/
-
-# Annotation artifacts (local staging/preflight outputs)
-annotation/
-annotations/
-
-# Downloaded Roboflow exports (all variants)
-MedTube Segmentation.yolov8/
-MedTube.yolov8/
-MedTube-2.yolov8/
-MedTube.coco/
-data/
-data_coco/
-
-# New Roboflow exports + COCO extracts + converted YOLO datasets (images, large)
-balanced/
-balanced_yolo/
-depth_coco/
-depth_yolo/
-rgbd/
-rgbd_split/
-*.zip
-
-# Training runs output (large)
-runs/
-Ultralytics/
-YOLOv9c-seg/
-
-# Pretrained / downloaded model weights at root
-*.pt
-
-# Weights kept under weights/ are committed selectively
-!weights/*.pt
-
-# macOS
+# ── macOS ──────────────────────────────────────────────────────────────────────
 .DS_Store
 
-# Runtime caches
+# ── Runtime caches ────────────────────────────────────────────────────────────
 .matplotlib/
 .ultralytics/
 
-# Third-party SDKs (large, not part of this project)
-librealsense/
+# ── Datasets (large binary files — download locally via Roboflow) ─────────────
+dataset/
+MedTube-2.yolov8/
+balanced_yolo/
+depth_yolo/
+rgbd_split/
+
+# ── Training run outputs (large) ─────────────────────────────────────────────
+runs/
+Ultralytics/
+
+# ── Pretrained / downloaded weights (not project-specific) ───────────────────
+*.pt
+\!weights/*.pt
+weights/rfdetr.pt
+weights/yolov8m-seg.pt
+weights/yolo11m-seg.pt
+weights/yolo11n.pt
+weights/yolo11n_weights.pt
+
+# ── LaTeX build artefacts ─────────────────────────────────────────────────────
 report/*.aux
 report/*.bbl
 report/*.bcf
+report/*.bcf-SAVE-ERROR
 report/*.blg
 report/*.fdb_latexmk
 report/*.fls
@@ -64,5 +51,15 @@ report/*.log
 report/*.out
 report/*.pdf
 report/*.run.xml
-weights/rfdetr.pt
-weights/yolov8m-seg.pt
+
+# ── Private development notes ─────────────────────────────────────────────────
+docs/notes.md
+
+# ── Third-party SDKs ──────────────────────────────────────────────────────────
+librealsense/
+
+# ── Archived / superseded data ────────────────────────────────────────────────
+_archive/
+
+# ── Zip archives (dataset exports) ──────────────────────────────────────────
+*.zip

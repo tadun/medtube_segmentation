@@ -3,28 +3,36 @@
 ## 1. Project Scope
 
 - Goal: instance segmentation of medical tubes using RGB images collected from Intel RealSense D415.
+
 - Core workflow: collect data -> stage and upload -> annotate in Roboflow (SAM-assisted/manual) -> export YOLOv8 segmentation -> train and compare YOLOv8/YOLOv9/YOLOv11.
+
 - Primary codebase root: `medtube_segmentation`.
 
 ## 2. Hardware and Environment
 
 - Machine used for training and development: Apple M1 Max (arm64), 64 GB RAM.
+
 - Python environment: `rs_env`.
+
 - Torch environment check:
   - torch 2.12.0
   - MPS built: True
   - MPS available: True
+
 - Ultralytics version observed: 8.4.56.
 
 ## 3. Dataset and Taxonomy
 
 - Initial collection stage completed for tube folders under `dataset/`.
+
 - Staging pipeline created to aggregate RGB images for annotation.
+
 - Class mapping in current staging logic:
   - Universal: tubes 2, 3, 11
   - Screw cap: tube 1
   - Push-on: tubes 4, 5, 6, 7, 12, 13, 14
   - Other: tubes 8, 9, 10, 15, 16, 17
+
 - Files updated for taxonomy and staging include:
   - `prepare_annotation_set.py`
   - `README.md`
@@ -32,9 +40,12 @@
 ## 4. Annotation and Export Workflow
 
 - Images staged for Roboflow annotation and uploaded.
+
 - Roboflow annotation completed and YOLOv8 segmentation export downloaded.
+
 - Export folder in use during training/debug:
   - `/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)`
+
 - For project cleanliness, local export folder in repo is ignored via `.gitignore`.
 
 ## 5. Data Integrity Findings and Fixes
@@ -42,82 +53,110 @@
 ### 5.1 Empty labels
 
 - Empty label files were detected in the YOLO export.
+
 - Option 3 (copy nearest frame label) was attempted for 15 files.
+
 - Visual QA showed copied labels had correct size but wrong placement.
+
 - Dataset was restored from backup to pre-option-3 state for those files.
+
 - A correction queue CSV was generated:
   - `MedTube Segmentation.yolov8/correction_queue_empty_labels.csv`
 
 ### 5.2 Training crash root cause
 
 - Training failed with tensor size mismatch and mixed detect/segment warning.
+
 - Root cause: 4 label rows were bounding-box format (5 values) inside segmentation label files.
+
 - Quarantine action performed:
   - Removed 4 bad image/label pairs from active train/test splits.
   - Moved to:
     - `/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)/excluded_bad_seg_rows`
+
 - Post-fix split counts:
   - train: 2097 images, 2097 labels
   - valid: 450 images, 450 labels
   - test: 449 images, 449 labels
+
 - Remaining malformed short segmentation rows after quarantine: 0.
 
 ## 6. Training Pipeline Status
 
 - Comparison script: `src/train_compare.py`.
+
 - Models configured:
   - YOLOv8-seg: yolov8m-seg.pt
   - YOLOv9-seg: updated to yolov9c-seg.pt (valid checkpoint)
   - YOLOv11-seg: yolo11m-seg.pt
+
 - Augmentation preset used for most runs: mild.
 
 ### 6.1 Smoke Test (Completed)
 
 - Test run: YOLOv8-seg, 1 epoch, imgsz 640, batch 8.
+
 - Dataset path used:
   - `/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)/data.yaml`
+
 - Result summary (epoch 1 validation):
   - Box mAP50: 0.836
   - Box mAP50-95: 0.704
   - Mask mAP50: 0.836
   - Mask mAP50-95: 0.686
+
 - Smoke test confirms training pipeline now runs end-to-end after label cleanup.
 
 ## 7. Utility and QA Scripts Added
 
 - `tools/preview_labels.py`
   - Generates overlays for auto-filled labels to inspect geometric correctness.
+
 - `tools/view_masks.py`
   - Local viewer for COCO segmentation overlays with class names.
 
 ## 8. Git History Milestones (Recent)
 
 - ba23507: ignore MedTube export folder and add QA preview utility
+
 - 1677cc1: collect UX improvements (tube switching, warning banner, etc.)
+
 - e6806e5: style and linting cleanup (pylint 10.00/10 cycle)
+
 - 5429b52: pre-commit setup and formatting
+
 - b3b85d3: taxonomy update for Screw cap
+
 - de6ec3c: tube class mapping in annotation manifest
+
 - 1931a16: SAM3 + Roboflow workflow and preflight additions
 
 ## 9. Current Known Caveats
 
 - Some labels in exported datasets required manual correction due to empties/malformed rows.
+
 - YOLO training should use a cleaned segmentation-only dataset.
+
 - If using depth in future, current pipeline remains RGB-only unless a custom RGB-D loader/model path is implemented.
 
 ## 10. Recommended Next Steps for Final Report Figures/Tables
 
 - Add a dataset table with per-split image counts after cleaning.
+
 - Add a model comparison table (YOLOv8/9/11) using the same cleaned dataset and same augmentation preset.
+
 - Include a short error-analysis section on malformed labels and remediation process.
+
 - Include one qualitative figure with predicted masks per class.
 
 ## 11. Reproducibility Checklist
 
 - Verify `data.yaml` path exists and points to cleaned dataset.
+
 - Run a 1-epoch smoke test first.
+
 - Run full `src/train_compare.py` on same split and preset.
+
 - Archive `runs/` output and `comparison.json` for report appendix.
 
 ## 12. Session Update (2026-07-13)
@@ -125,23 +164,29 @@
 ### 12.1 Operational training decision (laptop lid constraint)
 
 - User selected safe stop/resume workflow for active local training.
+
 - Active run was interrupted intentionally with Ctrl+C (exit code 130).
+
 - Latest checkpoint identified for resume:
   - `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/last.pt`
+
 - Resume command validated and recorded:
   - `rs_env/bin/python -c "from ultralytics import YOLO; YOLO('runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/last.pt').train(resume=True)"`
 
 ### 12.2 Model comparison rationale (YOLOv8/9/11)
 
 - Comparison retained to benchmark across stable (v8), intermediate/newer (v9), and latest-generation (v11) segmentation families under identical data and augmentation settings.
+
 - This isolates architecture generation effects from dataset/pipeline effects.
 
 ### 12.3 Depth-direction conclusion
 
 - Depth-only training is considered worthwhile as an ablation baseline.
+
 - Expected ranking for final accuracy remains:
   - RGB-D fusion (best expected)
   - RGB-only or depth-only depending on scene conditions
+
 - Practical guidance captured for next experiments:
   - run RGB-only baseline,
   - run depth-only baseline,
@@ -153,7 +198,9 @@
 ### 13.1 Training status
 
 - YOLOv8-seg training is actively running (resumed from `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/last.pt`).
+
 - Current working weights for live inference: `weights.pt` (project root symlink/copy).
+
 - When training completes, swap `weights.pt` → new `best.pt` to update the live stream.
 
 ### 13.2 Live stream overhaul (`src/realsense_stream.py`)
@@ -163,42 +210,59 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 #### Display
 
 - 2×2 grid window ("MedTube Segmentation Stream") auto-sized to fit the screen.
+
 - TL: raw RGB stream, TR: depth heatmap (auto-ranged TURBO), BL: stream + YOLO masks, BR: depth + YOLO masks.
+
 - Class-coloured masks matching data.yaml class order: Universal=red, Screwcap=green, Push-on=blue, Other=yellow.
+
 - Panel labels drawn with `FONT_HERSHEY_DUPLEX` on semi-transparent dark backgrounds.
+
 - HUD bar shows live/rec status, elapsed time, snapshot count, and full-text controls.
 
 #### Capture
 
 - Space saves a 4-view snapshot set to `runs/captures/snapshots/`.
+
 - R starts/stops continuous recording to `runs/captures/rec_<timestamp>/` at 0.5 s intervals.
 
 #### Camera/depth handling
 
 - 180° flip applied at source (camera is mounted upside-down).
+
 - 4 s auto-exposure warmup after pipeline start.
+
 - Depth ROI locked on first stable frame to remove IR parallax zone.
+
 - Depth post-processing: spatial filter → temporal filter → hole-filling filter.
+
 - Depth+Masks panel uses scene-calibrated 435–535 mm range (matches src/capture_dataset.py).
+
 - Heatmap panel uses per-frame auto-range for full depth scene visibility.
+
 - Mask alignment uses `masks.xy` polygon rasterization (no interpolation offset).
 
 ### 13.3 Passwordless launcher (`stream.sh`)
 
 - One-time setup creates `/usr/local/bin/rs-stream-medtube` and a scoped NOPASSWD sudoers rule.
+
 - After setup: `./stream.sh` launches the stream without a password prompt.
+
 - Scoped to the specific binary only — minimal security exposure.
 
 ### 13.4 macOS USB access root cause
 
 - macOS CoreMediaIO / VDCAssistant claims the camera USB interface, blocking librealsense.
+
 - Google Meet / video calls in particular hold the interface.
+
 - Solution: run via `sudo` (handled by `stream.sh`).
+
 - Camera connected through a USB 3.1 GenesysLogic hub — works reliably after sudo.
 
 ### 13.5 Current known issues
 
 - Screwcap / Push-on confusion occurs occasionally — a model accuracy issue expected to improve once the current training run completes.
+
 - Dark matte surface absorbs IR — depth heatmap has scattered black holes on that surface type; spatial/temporal/hole-filling filters reduce but do not eliminate this.
 
 ## 14. Session Update (2026-07-14 — Training Complete)
@@ -206,12 +270,18 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 ### 14.1 YOLOv8m-seg Full Run — Training Summary
 
 - Run ID: `2026-07-12_22-48-54`
+
 - Weights directory: `runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/`
+
 - Total epochs: **100** (completed; no early stop — patience=20 not triggered)
+
 - Training device: Apple M1 Max CPU (MPS was not used due to Ultralytics CPU-fallback)
+
 - Base model: `yolov8m-seg.pt` (pretrained COCO)
+
 - Dataset: `/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)/data.yaml`
   - train: 2097 images, valid: 450 images, test: 449 images
+
 - Batch size: 8, imgsz: 640
 
 **Best checkpoint: epoch 85** (saved as `best.pt`, selected by Mask mAP50-95)
@@ -239,7 +309,9 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 ### 14.2 Test-Split Evaluation (best.pt on held-out test set)
 
 - Evaluated with `model.val(split='test', imgsz=640, batch=8, device='cpu')`
+
 - Results saved to: `runs/segment/runs/test_results/YOLOv8-best-test/`
+
 - 449 images, 0 backgrounds, 0 corrupt
 
 **Per-class results (test split):**
@@ -255,7 +327,9 @@ Complete rewrite of the stream script into a production-ready YOLO segmentation 
 **Observations:**
 
 - Screwcap is the hardest class (lowest mAP50-95 at 0.945 box / 0.798 mask) — consistent with live-stream confusion noted in §13.5.
+
 - Universal achieves perfect recall (1.0) and highest mask mAP50-95 (0.887).
+
 - The gap between mAP50 (~0.985) and mAP50-95 (~0.806) for masks suggests the model localises tubes well but mask tightness degrades at higher IoU thresholds — likely due to annotation polygon coarseness rather than model failure.
 
 ### 14.3 Training Hyperparameters (full, for reproducibility)
@@ -314,7 +388,9 @@ auto_augment: randaugment
 ### 14.5 Live Stream — Testing with best.pt
 
 - `weights.pt` (repo root, 5.8 MB) is a different/older model — **not** the newly trained weights.
+
 - `FALLBACK_WEIGHTS` in `src/realsense_stream.py` already points to `best.pt` automatically if `weights.pt` is absent.
+
 - To run stream explicitly with new weights:
 
   ```bash
@@ -334,6 +410,7 @@ auto_augment: randaugment
 After testing `best.pt` (YOLOv8m-seg) on the live stream, it was observed to perform **visually worse** than `weights.pt` despite the latter having nominally lower val/test metrics. Investigation revealed:
 
 - `weights.pt` is a fine-tuned **YOLO11n-seg** (4 medtube classes), origin: a prior training run (likely Kaggle GPU run — no local weights folder preserved for that session).
+
 - The discrepancy is explained primarily by **inference speed**: YOLOv8m runs at ~112 ms/frame vs YOLO11n at ~21 ms/frame — a **5.4× difference** that severely impacts live stream smoothness.
 
 ### 15.2 Head-to-Head Test-Split Benchmark (449 images)
@@ -361,8 +438,11 @@ Both models evaluated with `model.val(split='test', imgsz=640, batch=8, device='
 ### 15.3 Analysis
 
 - **Metric parity**: Both models are essentially equivalent on the test split — differences are within ~1–2 pp.
+
 - **Mask mAP50-95**: YOLO11n is +1.3 pp better than YOLOv8m on masks at high IoU thresholds, suggesting YOLO11's architectural improvements (C3k2, SPPF, C2PSA attention) produce tighter segmentation polygons on this data.
+
 - **Live stream feel**: The 5.4× speed advantage of YOLO11n makes it significantly smoother and more responsive. At 21 ms/frame it can approach 30–48 fps on CPU; YOLOv8m at 112 ms/frame is capped at ~9 fps.
+
 - **Generalisation**: The test set is from the same Roboflow export as training data. The live stream is real-world with different lighting and backgrounds — the nano model's lighter capacity may also reduce over-fitting to the annotation distribution.
 
 ### 15.4 Recommended Next Step — YOLO11m Full Run
@@ -370,7 +450,9 @@ Both models evaluated with `model.val(split='test', imgsz=640, batch=8, device='
 The local YOLO11m run (`2026-07-12_22-07-43`) was interrupted before saving any weights. A proper comparison requires:
 
 - YOLO11m-seg trained for 100 epochs on the same cleaned dataset with the same mild augmentation preset.
+
 - This would isolate architecture generation (YOLO11 vs v8) from model size (nano vs medium).
+
 - Expected outcome: YOLO11m should beat YOLOv8m on both metrics and speed (YOLO11m is ~20% faster than YOLOv8m at equivalent size).
 
 **Interim decision**: keep `weights.pt` (YOLO11n) as the default for live streaming. Use `best.pt` (YOLOv8m) only for controlled benchmark comparison.
@@ -407,8 +489,11 @@ Note: RF-DETR uses 384×384 because that is its recommended optimum (Roboflow gu
 ### 16.3 Reporting Considerations
 
 - **Hardware difference**: Roboflow GPU ≠ local M1 Max CPU — inference speed cannot be directly compared to local YOLO benchmarks.
+
 - **Input resolution difference** for RF-DETR (384 vs 640) must be disclosed in the comparison table.
+
 - Present cloud-trained results in clearly labelled rows, e.g. `YOLOv8n-seg (640², cloud)` and `RF-DETR-S (384², cloud)`.
+
 - Accuracy metrics (mAP) are still comparable since they are evaluated on the same test split regardless of training hardware.
 
 ### 16.4 Results (fill in once training completes)
@@ -435,15 +520,21 @@ All models evaluated on the held-out test split of `MedTube 2.yolov8`. YOLO mode
 **Notes:**
 
 - RF-DETR Mask mAP not computed locally — `supervision` 0.29.1 does not support `use_mask_iou=True`. Roboflow's own valid-set evaluation reports mAP@50 = **99.8%** (Precision 99.8%, Recall 99.8%, F1 99.8%).
+
 - RF-DETR trained at 384×384 input resolution; all YOLO models at 640×640. Resolution difference is noted in the comparison.
+
 - YOLOv9c trained on Colab with `medtube-2` dataset; evaluation here also uses `medtube-2` — dataset mismatch was ruled out as the cause of underperformance.
 
 ### 17.2 Key Findings
 
 - **RF-DETR leads on Box mAP50-95 (0.954) AND runs at 27.8 ms** — faster than YOLOv8m (108 ms) despite being a transformer. The attention-based architecture achieves tighter bounding boxes than all YOLO variants while remaining suitable for real-time deployment.
+
 - **YOLOv8m leads on Mask mAP50-95 (0.905)** — 100-epoch local training with full hyperparameter control gives the most precise polygon masks.
+
 - **YOLO26n is the best nano model** — fastest (23.1 ms), best mask IoU at nano tier (0.820), marginally better than YOLO11n on all metrics.
+
 - **YOLOv9c underperforms its size** — 213 MB / 182 ms yet lowest Mask mAP50-95 (0.799). Root cause: only **32 epochs completed** (early stopping triggered; patience=20). At the point of early stopping, val Mask mAP50-95 on its own dataset was 0.838 — much closer to the other models. Undertrained, not architecturally inferior.
+
 - **Speed-accuracy sweet spot**: YOLO26n for live deployment; YOLOv8m or RF-DETR for highest accuracy batch inference.
 
 ### 17.3 Deployment Recommendation
@@ -468,28 +559,39 @@ All models evaluated on the held-out test split of `MedTube 2.yolov8`. YOLO mode
 ### 18.2 YOLOv9c training post-mortem
 
 - Trained on Colab free T4 using `notebooks/train_colab_yolov9c.ipynb`.
+
 - Dataset: `tadeass-workspace/medtube-2` (new Roboflow account).
+
 - Only **32 epochs** completed before early stopping (patience=20, no improvement for 20 epochs).
+
 - Best val Mask mAP50-95 on its own dataset: **0.838** at epoch 30.
+
 - Local test-split evaluation against `MedTube 2.yolov8` gave **0.799** — gap is due to undertrained model not dataset mismatch (both use medtube-2).
+
 - Recommendation: retrain for full 100 epochs or increase patience to 30.
 
 ### 18.3 MedTube 2 dataset (new Roboflow account)
 
 - Workspace: `tadeass-workspace`, project: `medtube-2`, version: `dataset`
+
 - Local path: `/Users/tadun/Downloads/MedTube 2.yolov8/`
+
 - Split counts: train 2100, valid 450, test 450 (vs old: 2097/450/449)
+
 - Same 4 classes, same 640×640 export. All model re-evaluations from 2026-07-15 onwards use this dataset.
 
 ### 18.4 RF-DETR evaluation methodology
 
 - Evaluated via Roboflow Inference SDK (`inference` package, model ID `medtube-2/1`).
+
 - Script: `notebooks/eval_rfdetr.py`.
+
 - Key implementation details:
   - `torch.cuda.stream` monkey-patched to a no-op (Apple Silicon MPS incompatibility).
   - Ground-truth boxes derived from polygon min/max (YOLO segmentation format — no explicit bbox).
   - Prediction polygons rasterised from `p.points` (list of `Point(x, y)`) using `cv2.fillPoly`.
   - Mask mAP not computable with `supervision==0.29.1` (`use_mask_iou` not supported).
+
 - Results: Box mAP50=0.986, Box mAP50-95=0.954, inference=27.8 ms/image.
 
 ### 18.5 Codebase reorganisation (2026-07-14–15)
@@ -529,9 +631,13 @@ The Roboflow API key `qxCKKYWIhOYWu3jZtVNq` was exposed in a VS Code chat sessio
 ### 18.8 Outstanding items before report
 
 - [ ] Retrain YOLOv9c for full 100 epochs for a fair size-matched comparison vs YOLOv8m
+
 - [ ] Compute RF-DETR Mask mAP (upgrade supervision or implement custom mask IoU)
+
 - [ ] Fill in YOLOv8n-seg Roboflow cloud results (section 16.4)
+
 - [ ] Collect qualitative figure: side-by-side stream snapshots per model
+
 - [ ] Decide whether to include the RF-DETR live-stream integration (requires inference SDK in deployment)
 
 ---
@@ -550,14 +656,23 @@ resources, prior work, and documentation relevant to the report.
 A companion/prior project by Jessiah Buamah providing a **digital twin framework** for medical tube sorting using reinforcement learning and robotics:
 
 - **Simulation engine:** PyBullet physics with 3D conveyor belt, hopper, air jets, and collection bins
+
 - **Detection model:** YOLOv8n (object detection, not segmentation) trained on synthetic PyBullet-rendered images (320×320, 1000 images)
+
 - **Tube types:** 5 classes — Polypropylene Tube 1, Polypropylene Tube 2, Polystyrene Tube 1, Polystyrene Tube 2, Lysis Tube
+
 - **RL algorithms:** PPO and SAC (Stable-Baselines3 + Gymnasium)
+
 - **Robot:** UR5 + Robotiq 85 gripper (simulated) for cap unscrewing/disassembly
+
 - **Results:** SAC achieved 81% peak sorting accuracy; PPO most stable convergence; robotic disassembly 72–85% success
+
 - **Relation to MedTube:** This project provides the downstream sorting/disassembly context that motivates high-quality upstream segmentation. MedTube segmentation feeds into this pipeline.
+
 - **Key files:** `object_deyection.py`, `rl_training_ppo.py`, `sample_test.py`, `tube_detection_project.py`
+
 - **3D assets:** URDF files for conveyor belts, air jets, bins, UR5 robot; OBJ/MTL meshes for tube types
+
 - **Pipeline figure:** `assets/figure2.png` — Medical Tube Segregation and Disassembly Pipeline diagram
 
 ### 19.3 Early Object Detection Results
@@ -565,7 +680,9 @@ A companion/prior project by Jessiah Buamah providing a **digital twin framework
 **object_detection_results.txt** — Inference log from an early YOLOv8 detection model on the `datasets/` folder (Tube 1–8, VACUETTE types):
 
 - Most detections have very low confidence (0.01–0.06), indicating an under-trained or mismatched model
+
 - Class names used: PS-Tube (Polystyrene), PP-Tube (Polypropylene), Colour-Checker
+
 - Demonstrates the need for a properly trained segmentation model (motivation for MedTube project)
 
 ### 19.4 datasets/ Folder (Original Tube Photos)
@@ -598,8 +715,11 @@ Five PDF papers already saved in `Papers/`:
 ### 19.6 Other PDFs at Root Level
 
 - **MedBin.pdf** — Likely a related medical waste/recycling bin design document
+
 - **Real-Time_Progressive_3D_Semantic_Segmentation_for_Indoor_Scenes.pdf** — 3D semantic segmentation paper (reference for depth-based approaches)
+
 - **Robotics_Conference_Paper vF.pdf** — Robotics conference paper (likely related to the UR5 disassembly pipeline)
+
 - **download.pdf** — Unknown (needs title extraction)
 
 ### 19.7 Documents/ Folder (Administrative & Presentations)
@@ -607,34 +727,51 @@ Five PDF papers already saved in `Papers/`:
 #### Presentations
 
 - **MedTube_Segmentation.pptx** — Main project presentation (original version)
+
 - **MedTube_Segmentation (1).pptx** — Revised presentation
+
 - **MedTube_Segmentation 2.pptx** — Latest presentation (also at root level)
+
 - **MedPlasticLoughUni.pptx** — MedPlastic presentation (Loughborough University context)
+
 - **MedPlastic_JfDu.pptx** — MedPlastic presentation (JfDu variant)
+
 - **Researching and writing systematic reviews.pptx** — Academic writing guide
 
 #### Project Documents
 
 - **AI Enabled MTP Sorting System Architecture.docx** — System architecture document for the AI-enabled Medical Tube Product sorting system
+
 - **AI and ML-Driven Automated Sorting System.pdf** — Published/formal document on the sorting system
+
 - **MTPContainers.docx** — Medical Tube Product container specifications
+
 - **MedTube - Presentation Outline.docx / .rtf** — Presentation outline drafts
 
 #### Administrative
 
 - **Risk Assessment Form - Horn.docx** — Health and safety risk assessment
+
 - **Ethical Review Form - Horn.pdf / .docx** — Ethical review documentation (signed)
+
 - **FYP and MSc Projects - Ethical Review Form (2).docx** — University ethical review template
+
 - **GENERAL HEALTH AND SAFETY RISK ASSESSMENT FORM.docx** — General H&S template
+
 - **MSc - Impact Statement Brief Notes (2025-26).docx** — Impact statement guidance
+
 - **MSc - Lecture Notes on Impact (June 2026).pdf** — Impact lecture notes
+
 - **BlueBearLogin.docx** — BlueBear HPC login details (University of Birmingham)
+
 - **Summer Project Meeting Form.docx** — Template meeting form
 
 #### Meeting Forms (Supervision Records)
 
 - **Meeting Form - May.docx** — May 2026 meeting record
+
 - **Meeting Form - June.docx** — June 2026 meeting record
+
 - **Meeting Form - July.docx** — July 2026 meeting record
 
 #### Data
@@ -652,15 +789,25 @@ Five PDF papers already saved in `Papers/`:
 ### 19.8 Pictures/ Folder (Reference Images)
 
 - **IMG_6344.jpeg, IMG_6374.jpeg** — Photos of physical medical tubes
+
 - **IMG_9128.HEIC** — Additional tube photo
+
 - **Blood-collection-tubes-Emilie-Brysting.webp** — Reference image of blood collection tubes (various cap colours)
+
 - **Medical_recycling.png** — Medical recycling context image
+
 - **yolo-(1).jpg** — YOLO architecture diagram (for report figure)
+
 - **crested-wm-full-colour-e1671624830551.png** — University of Birmingham crest/watermark
+
 - **ChatGPT Image Jun 17, 2026, 06_21_33 PM.png** — AI-generated concept image
+
 - **ChatGPT Image Jun 17, 2026, 06_40_30 PM.png** — AI-generated concept image
+
 - **Gemini_Generated_Image_gtoafwgtoafwgtoa.png** — AI-generated image
+
 - **1_olhihapANay0HcoPzRclcA.png** — Reference diagram
+
 - **cf927d5f-5584-4b0c-8d82-9caa45c58e32.png** — Reference image
 
 ### 19.9 Screenshots/ Folder (Development Timeline Evidence)
@@ -683,22 +830,31 @@ Five PDF papers already saved in `Papers/`:
 ### 19.10 Video Assets
 
 - **MedTube_Segmentation_Horn.mp4** — Video demonstration (likely live inference demo or presentation recording)
+
 - **SimulationVideo.mov** — PyBullet conveyor belt simulation video (Conveyor-Belt project)
 
 ### 19.11 Roboflow Account Details
 
 - **User:** `txh543@student.bham.ac.uk`
+
 - **Workspaces:** tades-workspace (MedTube v1), tadeass-workspace (MedTube 2)
+
 - **University:** University of Birmingham
+
 - **Augmented dataset size:** 7200 images (from 3000 base, 2.4× augmentation)
 
 ### 19.12 University Context
 
 - **Institution:** University of Birmingham
+
 - **Programme:** MSc (Advanced Project, 2025–26 academic year)
+
 - **Supervisor meetings:** May, June, July 2026
+
 - **Ethics:** Ethical review signed; Risk assessment completed
+
 - **HPC access:** BlueBear (University HPC cluster) — login details available
+
 - **Impact statement:** Required per MSc guidelines
 
 ### 19.13 Key Figures Available for Report
@@ -858,8 +1014,11 @@ Curated list of peer-reviewed and closely relevant references only. BibTeX keys 
 ### 21.2 Stream architecture notes
 
 - Models discovered from `weights/` directory at startup
+
 - Model display names resolved from YOLO yaml metadata
+
 - Grid image scaled to target resolution before display (bypasses broken `resizeWindow` on macOS Retina)
+
 - Window positioned at y=-50 to tuck title bar behind menu bar
 
 ### 21.3 Next steps
@@ -877,7 +1036,9 @@ Eval run via `tools/eval_comparison.py` on the local machine (Apple M1 Max, CPU)
 **Important caveats:**
 
 - RGB models evaluated on the held-out **test split** of MedTube-2.yolov8 (450 images, nc=4).
+
 - RGBD and depth models evaluated on their respective full datasets (train=val=test in the data yaml — metrics are therefore **upper-bound estimates** for those models).
+
 - `yolo26n_balanced` skipped: nc=7 is incompatible with the nc=4 evaluation set.
 
 | Model | Input | Box P | Box R | Box mAP50 | Box mAP50-95 | Mask P | Mask R | Mask mAP50 | **Mask mAP50-95** | Notes |
@@ -887,135 +1048,14 @@ Eval run via `tools/eval_comparison.py` on the local machine (Apple M1 Max, CPU)
 | yolo26n      (nc=4, RGB) | RGB | 0.9904 | 0.9906 | 0.9832 | 0.9505 | 0.9904 | 0.9906 | 0.9832 | **0.82** | RGB 3-ch, MedTube-2 test split |
 | YOLO11n-RGBD (100 ep, local) | RGBD | 0.9991 | 0.9993 | 0.9945 | 0.9884 | 0.9991 | 0.9993 | 0.9945 | **0.9287** | RGBD 4-ch, full RGBD split (train=val=test) |
 | YOLO11n-RGBD (37 ep, Colab) | RGBD | 0.9965 | 0.9968 | 0.993 | 0.9586 | 0.9965 | 0.9968 | 0.993 | **0.8704** | RGBD 4-ch, full RGBD split (train=val=test, early stop) |
-| yolo26n-depth (nc=4, depth) | Depth | 0.989 | 0.987 | 0.994 | **0.927** | N/A | N/A | N/A | N/A | Depth-only 1-ch, full depth split (train=val=test) — detection-only model (no seg head; box metrics only) |
+| yolo26n-depth (nc=4, depth) | Depth | — | — | — | — | — | — | — | — | Eval failed — DetMetrics has no seg attribute |
+| yolo26n_depth-2 (nc=4, depth, local) | Depth | 0.991 | 0.988 | 0.9939 | 0.9186 | 0.9912 | 0.9883 | 0.994 | **0.8038** | Depth-only 1-ch — full depth split (local training) |
 
 ### Skipped models
 
 - **yolo26n_balanced (nc=7)**: Incompatible class count (nc=7 vs dataset nc=4); likely trained on a different label schema.
 
-### Raw JSON results
-
-```json
-{
-  "YOLOv8m-seg  (100 ep, local)": {
-    "box_P": 0.9901,
-    "box_R": 0.9912,
-    "box_mAP50": 0.9848,
-    "box_mAP50-95": 0.9681,
-    "mask_P": 0.9906,
-    "mask_R": 0.9929,
-    "mask_mAP50": 0.9848,
-    "mask_mAP50-95": 0.9054,
-    "note": "RGB 3-ch | MedTube-2 test split"
-  },
-  "YOLOv9c-seg  (32 ep, Colab)": {
-    "box_P": 0.9902,
-    "box_R": 0.9929,
-    "box_mAP50": 0.9832,
-    "box_mAP50-95": 0.9409,
-    "mask_P": 0.9902,
-    "mask_R": 0.9929,
-    "mask_mAP50": 0.9832,
-    "mask_mAP50-95": 0.7988,
-    "note": "RGB 3-ch | MedTube-2 test split (early stop)"
-  },
-  "yolo26n      (nc=4, RGB)": {
-    "box_P": 0.9904,
-    "box_R": 0.9906,
-    "box_mAP50": 0.9832,
-    "box_mAP50-95": 0.9505,
-    "mask_P": 0.9904,
-    "mask_R": 0.9906,
-    "mask_mAP50": 0.9832,
-    "mask_mAP50-95": 0.82,
-    "note": "RGB 3-ch | MedTube-2 test split"
-  },
-  "YOLO11n-RGBD (100 ep, local)": {
-    "box_P": 0.9991,
-    "box_R": 0.9993,
-    "box_mAP50": 0.9945,
-    "box_mAP50-95": 0.9884,
-    "mask_P": 0.9991,
-    "mask_R": 0.9993,
-    "mask_mAP50": 0.9945,
-    "mask_mAP50-95": 0.9287,
-    "note": "RGBD 4-ch | full RGBD split (train=val=test)"
-  },
-  "YOLO11n-RGBD (37 ep, Colab)": {
-    "box_P": 0.9965,
-    "box_R": 0.9968,
-    "box_mAP50": 0.993,
-    "box_mAP50-95": 0.9586,
-    "mask_P": 0.9965,
-    "mask_R": 0.9968,
-    "mask_mAP50": 0.993,
-    "mask_mAP50-95": 0.8704,
-    "note": "RGBD 4-ch | full RGBD split (train=val=test, early stop)"
-  },
-  "yolo26n-depth (nc=4, depth)": {
-    "box_P": 0.989,
-    "box_R": 0.987,
-    "box_mAP50": 0.994,
-    "box_mAP50-95": 0.927,
-    "mask": "N/A — detection-only model (no segmentation head)",
-    "note": "Depth-only 1-ch | full depth split (train=val=test)"
-  }
-}
-```
-
-
-## 22. Model Comparison Eval — 2026-07-21
-
-Eval run via `tools/eval_comparison.py` on the local machine (Apple M1 Max, CPU).
-
-**Important caveats:**
-- RGB models evaluated on the held-out **test split** of MedTube-2.yolov8 (450 images, nc=4).
-- RGBD and depth models evaluated on their respective full datasets (train=val=test in the data yaml — metrics are therefore **upper-bound estimates** for those models).
-- `yolo26n_balanced` skipped: nc=7 is incompatible with the nc=4 evaluation set.
-
-| Model | Input | Box P | Box R | Box mAP50 | Box mAP50-95 | Mask P | Mask R | Mask mAP50 | **Mask mAP50-95** | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|
-| YOLOv8m-seg  (100 ep, local) | RGB | 0.9901 | 0.9912 | 0.9848 | 0.9681 | 0.9906 | 0.9929 | 0.9848 | **0.9054** | RGB 3-ch | MedTube-2 test split |
-| YOLOv9c-seg  (32 ep, Colab) | RGB | 0.9902 | 0.9929 | 0.9832 | 0.9409 | 0.9902 | 0.9929 | 0.9832 | **0.7988** | RGB 3-ch | MedTube-2 test split (early stop) |
-| yolo26n      (nc=4, RGB) | RGB | 0.9904 | 0.9906 | 0.9832 | 0.9505 | 0.9904 | 0.9906 | 0.9832 | **0.82** | RGB 3-ch | MedTube-2 test split |
-| YOLO11n-RGBD (100 ep, local) | RGBD | 0.9991 | 0.9993 | 0.9945 | 0.9884 | 0.9991 | 0.9993 | 0.9945 | **0.9287** | RGBD 4-ch | full RGBD split (train=val=test) |
-| YOLO11n-RGBD (37 ep, Colab) | RGBD | 0.9965 | 0.9968 | 0.993 | 0.9586 | 0.9965 | 0.9968 | 0.993 | **0.8704** | RGBD 4-ch | full RGBD split (train=val=test, early stop) |
-| yolo26n-depth (nc=4, depth) | Depth | — | — | — | — | — | — | — | — | Depth-only 1-ch | full depth split (train=val=test) — ERROR: 'DetMetrics' object has no attribute 'seg'. See valid attributes below.
-Utility class for computing detection metrics such as precision, recall, and mean average precision (mAP).
-
-    Attributes:
-        names (dict[int, str]): A dictionary of class names.
-        box (Metric): An instance of the Metric class for storing detection results.
-        speed (dict[str, float]): A dictionary for storing execution times of different parts of the detection process.
-        stats (dict[str, list]): A dictionary containing lists for true positives, confidence scores, predicted classes,
-            target classes, and target images.
-        nt_per_class: Number of targets per class.
-        nt_per_image: Number of targets per image.
-
-    Methods:
-        update_stats: Update statistics by appending new values to existing stat collections.
-        process: Process predicted results for object detection and update metrics.
-        clear_stats: Clear the stored statistics.
-        keys: Return a list of keys for accessing specific metrics.
-        mean_results: Calculate mean of detected objects & return precision, recall, mAP50, and mAP50-95.
-        class_result: Return the result of evaluating the performance of an object detection model on a specific class.
-        maps: Return mean Average Precision (mAP) scores per class.
-        fitness: Return the fitness of box object.
-        ap_class_index: Return the average precision index per class.
-        results_dict: Return dictionary of computed performance metrics and statistics.
-        curves: Return a list of curves for accessing specific metrics curves.
-        curves_results: Return a list of computed performance metrics and statistics.
-        summary: Generate a summarized representation of per-class detection metrics as a list of dictionaries.
-     |
-| yolo26n_depth-2 (nc=4, depth, local) | Depth | 0.991 | 0.988 | 0.9939 | 0.9186 | 0.9912 | 0.9883 | 0.994 | **0.8038** | Depth-only 1-ch | full depth split (local training) |
-
-### Skipped models
-
-- **yolo26n_balanced (nc=7)**: Incompatible class count (nc=7 vs dataset nc=4); likely trained on a different label schema.
-
-
-<details>
-<summary>Raw JSON results</summary>
+#### Raw JSON results
 
 ```json
 {
@@ -1092,61 +1132,33 @@ Utility class for computing detection metrics such as precision, recall, and mea
 }
 ```
 
-</details>
-
-
-## 22. Model Comparison Eval — 2026-07-21
+## 22b. Model Comparison Eval — 2026-07-21 (second run)
 
 Eval run via `tools/eval_comparison.py` on the local machine (Apple M1 Max, CPU).
 
 **Important caveats:**
+
 - RGB models evaluated on the held-out **test split** of MedTube-2.yolov8 (450 images, nc=4).
+
 - RGBD and depth models evaluated on their respective full datasets (train=val=test in the data yaml — metrics are therefore **upper-bound estimates** for those models).
+
 - `yolo26n_balanced` skipped: nc=7 is incompatible with the nc=4 evaluation set.
 
 | Model | Input | Box P | Box R | Box mAP50 | Box mAP50-95 | Mask P | Mask R | Mask mAP50 | **Mask mAP50-95** | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|
-| YOLOv8m-seg  (100 ep, local) | RGB | 0.9901 | 0.9912 | 0.9848 | 0.9681 | 0.9906 | 0.9929 | 0.9848 | **0.9054** | RGB 3-ch | MedTube-2 test split |
-| YOLOv9c-seg  (32 ep, Colab) | RGB | 0.9902 | 0.9929 | 0.9832 | 0.9409 | 0.9902 | 0.9929 | 0.9832 | **0.7988** | RGB 3-ch | MedTube-2 test split (early stop) |
-| yolo26n      (nc=4, RGB) | RGB | 0.9904 | 0.9906 | 0.9832 | 0.9505 | 0.9904 | 0.9906 | 0.9832 | **0.82** | RGB 3-ch | MedTube-2 test split |
-| YOLO11n-RGBD (100 ep, local) | RGBD | 0.9991 | 0.9993 | 0.9945 | 0.9884 | 0.9991 | 0.9993 | 0.9945 | **0.9287** | RGBD 4-ch | full RGBD split (train=val=test) |
-| YOLO11n-RGBD (37 ep, Colab) | RGBD | 0.9965 | 0.9968 | 0.993 | 0.9586 | 0.9965 | 0.9968 | 0.993 | **0.8704** | RGBD 4-ch | full RGBD split (train=val=test, early stop) |
-| yolo26n-depth (nc=4, depth) | Depth | — | — | — | — | — | — | — | — | Depth-only 1-ch | full depth split (train=val=test) — ERROR: 'DetMetrics' object has no attribute 'seg'. See valid attributes below.
-Utility class for computing detection metrics such as precision, recall, and mean average precision (mAP).
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| YOLOv8m-seg  (100 ep, local) | RGB | 0.9901 | 0.9912 | 0.9848 | 0.9681 | 0.9906 | 0.9929 | 0.9848 | **0.9054** | RGB 3-ch — MedTube-2 test split |
+| YOLOv9c-seg  (32 ep, Colab) | RGB | 0.9902 | 0.9929 | 0.9832 | 0.9409 | 0.9902 | 0.9929 | 0.9832 | **0.7988** | RGB 3-ch — MedTube-2 test split (early stop) |
+| yolo26n      (nc=4, RGB) | RGB | 0.9904 | 0.9906 | 0.9832 | 0.9505 | 0.9904 | 0.9906 | 0.9832 | **0.82** | RGB 3-ch — MedTube-2 test split |
+| YOLO11n-RGBD (100 ep, local) | RGBD | 0.9991 | 0.9993 | 0.9945 | 0.9884 | 0.9991 | 0.9993 | 0.9945 | **0.9287** | RGBD 4-ch — full RGBD split (train=val=test) |
+| YOLO11n-RGBD (37 ep, Colab) | RGBD | 0.9965 | 0.9968 | 0.993 | 0.9586 | 0.9965 | 0.9968 | 0.993 | **0.8704** | RGBD 4-ch — full RGBD split (train=val=test, early stop) |
+| yolo26n-depth (nc=4, depth) | Depth | — | — | — | — | — | — | — | — | Eval failed — DetMetrics has no seg attribute |
+| yolo26n_depth-2 (nc=4, depth, local) | Depth | 0.991 | 0.988 | 0.9939 | 0.9186 | 0.9912 | 0.9883 | 0.994 | **0.8038** | Depth-only 1-ch — full depth split (local training) |
 
-    Attributes:
-        names (dict[int, str]): A dictionary of class names.
-        box (Metric): An instance of the Metric class for storing detection results.
-        speed (dict[str, float]): A dictionary for storing execution times of different parts of the detection process.
-        stats (dict[str, list]): A dictionary containing lists for true positives, confidence scores, predicted classes,
-            target classes, and target images.
-        nt_per_class: Number of targets per class.
-        nt_per_image: Number of targets per image.
-
-    Methods:
-        update_stats: Update statistics by appending new values to existing stat collections.
-        process: Process predicted results for object detection and update metrics.
-        clear_stats: Clear the stored statistics.
-        keys: Return a list of keys for accessing specific metrics.
-        mean_results: Calculate mean of detected objects & return precision, recall, mAP50, and mAP50-95.
-        class_result: Return the result of evaluating the performance of an object detection model on a specific class.
-        maps: Return mean Average Precision (mAP) scores per class.
-        fitness: Return the fitness of box object.
-        ap_class_index: Return the average precision index per class.
-        results_dict: Return dictionary of computed performance metrics and statistics.
-        curves: Return a list of curves for accessing specific metrics curves.
-        curves_results: Return a list of computed performance metrics and statistics.
-        summary: Generate a summarized representation of per-class detection metrics as a list of dictionaries.
-     |
-| yolo26n_depth-2 (nc=4, depth, local) | Depth | 0.991 | 0.988 | 0.9939 | 0.9186 | 0.9912 | 0.9883 | 0.994 | **0.8038** | Depth-only 1-ch | full depth split (local training) |
-
-### Skipped models
+### Skipped models (second run)
 
 - **yolo26n_balanced (nc=7)**: Incompatible class count (nc=7 vs dataset nc=4); likely trained on a different label schema.
 
-
-<details>
-<summary>Raw JSON results</summary>
+#### Raw JSON results (second run)
 
 ```json
 {
@@ -1222,5 +1234,3 @@ Utility class for computing detection metrics such as precision, recall, and mea
   }
 }
 ```
-
-</details>

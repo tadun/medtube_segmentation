@@ -1,281 +1,146 @@
 # MedTube Segmentation
 
-Dataset collection and instance segmentation pipeline for medical tubes using an Intel RealSense D415 depth camera.
+Real-time instance segmentation of medical tubes by cap type, developed as the upstream vision component of an AI-enabled waste-sorting pipeline. Uses an Intel RealSense D415 depth camera and YOLO-family models across RGB, RGBD, and depth-only modalities.
+
+**Dataset:** [Roboflow Universe](https://universe.roboflow.com/tades-workspace/medtube-segmentation)  
+**Report:** `report/main.tex`
 
 ---
 
-## Hardware
+## Results summary
 
-| Component          | Details                  |
-| ------------------ | ------------------------ |
-| Camera             | Intel RealSense D415     |
-| Connection         | USB 3.2                  |
-| Capture resolution | 1280 × 720 @ 30 fps      |
+| Model | Input | Params | Box mAP₅₀₋₉₅ | Mask mAP₅₀₋₉₅ | ms/img |
+|---|---|---|---|---|---|
+| YOLO11n-RGBD | RGBD | 2.8 M | 0.988 | **0.929** | 22.4 |
+| YOLOv8m-seg | RGB | 27.2 M | 0.968 | 0.905 | 108.5 |
+| YOLO26n-seg | RGB | 2.7 M | 0.951 | 0.820 | 23.1 |
+| YOLO11n-seg | RGB | 2.8 M | 0.949 | 0.820 | 21.7 |
+| YOLO26n-depth | Depth | 2.7 M | 0.919 | 0.804 | 22.8 |
 
-> **macOS note:** `pyrealsense2` requires elevated privileges to claim the USB interface on macOS.
-> Run `./stream.sh` (see below) which handles sudo automatically after a one-time setup.
-> You can also prefix any RealSense script manually with `sudo rs_env/bin/python`.
+Evaluated on a 450-image held-out test split. Inference on Apple M1 Max CPU.
+
+---
+
+## Repository structure
+
+```
+medtube_segmentation/
+├── src/
+│   ├── capture_dataset.py      # RealSense D415 data collection
+│   ├── realsense_stream.py     # Live inference — 2×2 RGB+Depth display
+│   ├── stream_multimodel.py    # Side-by-side multi-model comparison stream
+│   ├── prepare_depth_dataset.py# Build RGBD / depth-only dataset variants
+│   ├── train_compare.py        # Local multi-model training runner
+│   └── train_kaggle.py         # Cloud/Kaggle training with checkpoint resume
+├── tools/
+│   ├── generate_report_figures.py  # Generate dataset grid + comparison chart
+│   ├── eval_comparison.py          # Evaluate all models and log metrics
+│   ├── compare_confusion_matrices.py
+│   ├── split_rgbd.py
+│   ├── rebalance_classes.py
+│   ├── coco_to_yolo_seg.py
+│   ├── preview_labels.py
+│   ├── inspect_ann.py
+│   ├── view_masks.py
+│   └── backup_dataset.sh
+├── notebooks/
+│   ├── train_colab_rgbd.ipynb      # Colab RGBD training
+│   ├── train_colab_depth_seg.ipynb # Colab depth-only training
+│   ├── train_colab_yolov9c.ipynb   # Colab YOLOv9c training
+│   └── eval_rfdetr.py
+├── weights/                    # Fine-tuned model weights (committed selectively)
+│   ├── yolo26n.pt              # YOLO26n-seg — RGB, best speed/accuracy
+│   ├── yolo26n_depth.pt        # YOLO26n-depth — depth-only
+│   ├── yolo26n_depth-2.pt      # YOLO26n-depth v2
+│   ├── yolo26n_balanced.pt     # YOLO26n — class-balanced dataset
+│   └── YOLO11n-RGBD/           # YOLO11n-RGBD training diagnostics
+├── report/
+│   ├── main.tex                # Project report (LaTeX)
+│   ├── references.bib
+│   ├── abstract.tex
+│   ├── Academic.cls
+│   └── figures/                # Generated and captured figures
+├── docs/
+│   └── demo_script.sh
+├── stream.sh                   # Passwordless RealSense launcher (macOS)
+└── pyrightconfig.json
+```
+
+Large directories are gitignored and downloaded locally:
+
+| Directory | Contents | Source |
+|---|---|---|
+| `dataset/` | 30 × 100 raw RGB+depth frames | Captured locally |
+| `MedTube-2.yolov8/` | Primary annotated dataset (3,000 images) | Roboflow export |
+| `balanced_yolo/` | Class-balanced dataset variant | Roboflow export |
+| `depth_yolo/` | Depth-only dataset | `src/prepare_depth_dataset.py` |
+| `rgbd_split/` | RGBD dataset with 70/15/15 split | `tools/split_rgbd.py` |
+| `runs/` | Training outputs and inference snapshots | Generated locally |
 
 ---
 
 ## Setup
 
 ```bash
-# Create and activate the virtual environment
 python3.12 -m venv rs_env
 source rs_env/bin/activate
-
-# Install dependencies
-pip install pyrealsense2 opencv-python numpy ultralytics roboflow
+pip install pyrealsense2 opencv-python numpy ultralytics roboflow matplotlib pillow
 ```
+
+> **macOS:** `pyrealsense2` requires elevated privileges to claim the USB interface.  
+> Run `./stream.sh` for passwordless launch (see the script for one-time setup).
 
 ---
 
-## Scripts
+## Key scripts
 
-### `src/capture_dataset.py` — Data collection
+### Live inference stream
 
-Streams aligned RGB and depth from the D415 and saves paired frames to disk.
+```bash
+./stream.sh
+# or: sudo rs_env/bin/python src/realsense_stream.py
+```
+
+Displays a 2×2 grid: raw RGB · RGB+masks · depth heatmap · depth+masks.
+
+| Key | Action |
+|-----|--------|
+| `M` | Cycle between loaded models |
+| `Space` | Save snapshot (4 panels) |
+| `R` | Toggle recording at 2 fps |
+| `Q` | Quit |
+
+### Data collection
 
 ```bash
 sudo rs_env/bin/python src/capture_dataset.py
 ```
 
-Prompts for a session label on startup (e.g. `single`, `pairs`, `mixed`).
+Saves paired RGB PNGs and 16-bit depth PNGs to `dataset/tube_<N>/`.
 
-| Key     | Action                              |
-| ------- | ----------------------------------- |
-| `Space` | Start countdown then record / pause |
-| `S`     | Save a single frame immediately     |
-| `Q`     | Quit                                |
+### Evaluate all models
 
-#### Folder structure
-
-```text
-dataset/
-  YYYY-MM-DD_HH-MM-SS_LABEL/
-    rgb/          Colour PNGs  (1280 x 720, BGR)
-    depth_raw/    16-bit PNGs  (Z16, millimetres)
-    metadata.csv  frame index + Unix timestamp per saved frame
+```bash
+rs_env/bin/python tools/eval_comparison.py
 ```
 
-The live preview shows a normalised grayscale depth image (bright = close, dark = far, black = no IR return).
-Raw 16-bit depth values are preserved in saved files.
+### Regenerate report figures
+
+```bash
+rs_env/bin/python tools/generate_report_figures.py
+```
+
+Outputs `fig_dataset_examples.png` and `fig_model_comparison.png` to `report/figures/`.
 
 ---
 
-### `stream.sh` — Passwordless RealSense launcher
+## Class definitions
 
-Runs the live stream without a password prompt on every launch.
+| Class | Cap type | Recycling path |
+|---|---|---|
+| Push-on | 16 mm push-fit disc | Snap removal |
+| Universal | 31 mm wide screw-cap | Unscrew |
+| Screwcap | Narrow threaded (varied) | Unscrew |
+| Other | Non-standard | Manual handling |
 
-**One-time setup** (required once per machine):
-
-```bash
-# Create a symlink and add a sudoers rule scoped to this binary only
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cat > /tmp/rs-stream-medtube << 'EOF'
-#!/bin/bash
-PROJ="/Users/tadun/Documents/2026/Final Project/medtube_segmentation"
-exec "$PROJ/rs_env/bin/python" "$PROJ/src/realsense_stream.py" "$@"
-EOF
-sudo install -m 755 /tmp/rs-stream-medtube /usr/local/bin/rs-stream-medtube
-echo "$(whoami) ALL=(ALL) NOPASSWD: /usr/local/bin/rs-stream-medtube" \
-    | sudo tee /etc/sudoers.d/realsense
-sudo chmod 440 /etc/sudoers.d/realsense
-```
-
-After setup, launch the stream with:
-
-```bash
-./stream.sh
-```
-
----
-
-### `src/realsense_stream.py` — Live YOLO segmentation stream
-
-Real-time instance segmentation overlay on live D415 colour + depth frames.
-Displays a 2×2 grid window: **RGB** | **Depth Heatmap** (top), **Stream + Masks** | **Depth + Masks** (bottom).
-
-```bash
-./stream.sh          # recommended — no password prompt after one-time setup
-# or
-sudo rs_env/bin/python src/realsense_stream.py
-```
-
-#### Class colour coding
-
-| Class     | Colour  |
-|-----------|---------|
-| Universal | Red     |
-| Screwcap  | Green   |
-| Push-on   | Blue    |
-| Other     | Yellow  |
-
-#### Controls
-
-| Key     | Action                          |
-|---------|---------------------------------|
-| `Space` | Save snapshot (all 4 views)     |
-| `R`     | Start / stop recording          |
-| `Q`     | Quit                            |
-
-#### Depth panels
-
-- *Depth Heatmap* (TR): TURBO colourmap auto-ranged to valid depth per frame.
-- *Depth + Masks* (BR): TURBO colourmap using the same scene-calibrated range as `src/capture_dataset.py` (435–535 mm default).
-
-**Saves** go to `runs/captures/`:
-
-```text
-runs/captures/
-  snapshots/              ← Space key  (stream, overlay, depth, heat — 4 PNGs per snap)
-  rec_YYYYMMDD_HHMMSS/    ← R key      (same 4 views per frame, every 0.5 s)
-```
-
-#### Camera setup
-
-- Camera is mounted upside-down; the stream applies a 180° flip automatically.
-- Recommended height above scene: 600–800 mm for best depth accuracy and minimal IR parallax.
-- Depth ROI is auto-detected on the first stable frame to remove the IR parallax blind zone.
-
-Trains YOLOv8-seg, YOLOv9-seg and YOLOv11-seg on the same dataset with identical augmentation settings and prints a side-by-side mAP summary.
-
-```bash
-rs_env/bin/python src/train_compare.py
-```
-
-Expects the dataset in YOLO segmentation format under `data/`:
-
-```text
-data/
-  dataset.yaml
-  train/
-    images/
-    labels/
-  val/
-    images/
-    labels/
-```
-
-Export from Roboflow in **YOLOv8 format** — the download unpacks directly into this structure.
-
-Built-in augmentation presets:
-
-- `strong` (default): aggressive transforms for small datasets
-- `mild`: conservative transforms to reduce synthetic shift
-- `none`: disable augmentation for baseline comparison
-
----
-
-## QA Utilities
-
-Project viewers and inspection helpers live under `tools/` to keep the root focused on the main collection, annotation, and training pipeline.
-
-```bash
-# preview auto-filled YOLO labels
-rs_env/bin/python tools/preview_labels.py
-
-# inspect COCO masks with class overlays
-rs_env/bin/python tools/view_masks.py --dataset data_coco --random
-```
-
----
-
-## Kaggle Training (Free GPU)
-
-For long runs on free Kaggle sessions, use the single-model trainer with checkpoint resume:
-
-```bash
-python src/train_kaggle.py \
-  --data /kaggle/input/<your-dataset>/data.yaml \
-  --model yolo11m-seg.pt \
-  --name medtube-yolo11 \
-  --aug-preset mild
-```
-
-Resume after a Kaggle disconnect or session timeout:
-
-```bash
-python src/train_kaggle.py \
-  --data /kaggle/input/<your-dataset>/data.yaml \
-  --name medtube-yolo11 \
-  --resume
-```
-
-Notes:
-
-- Kaggle writes checkpoints under `/kaggle/working/runs/<name>/weights/`.
-- Download `best.pt` and `last.pt` from notebook output before session ends.
-- If you need to continue in a new session, upload `last.pt` as a Kaggle Dataset and place it at `/kaggle/working/runs/<name>/weights/last.pt` before running `--resume`.
-
----
-
-## Local Long-Run Resume (macOS)
-
-If a local training run is interrupted intentionally (for example before closing a laptop),
-resume from the newest checkpoint in `runs/segment/runs/.../weights/last.pt`.
-
-Example resume command used in this project:
-
-```bash
-cd "/Users/tadun/Documents/2026/Final Project/medtube_segmentation"
-rs_env/bin/python -c "from ultralytics import YOLO; YOLO('runs/segment/runs/2026-07-12_22-48-54/YOLOv8-seg/weights/last.pt').train(resume=True)"
-```
-
-Tip for long local runs:
-
-```bash
-mkdir -p runs/overnight_logs
-TS=$(date +%Y%m%d_%H%M%S)
-LOG="runs/overnight_logs/train_compare_${TS}.log"
-caffeinate -dimsu rs_env/bin/python src/train_compare.py --data "/Users/tadun/Downloads/MedTube Segmentation.yolov8 (1)/data.yaml" --aug-preset mild 2>&1 | tee "$LOG"
-```
-
----
-
-## Depth Experiment Plan
-
-Depth-only training is useful as an ablation baseline, but not expected to be the final best model.
-
-Recommended order:
-
-1. RGB-only baseline.
-2. Depth-only baseline.
-3. RGB-D fusion model.
-
-Notes:
-
-- Model version alone (YOLOv8/9/11) is usually less important than depth quality and fusion strategy.
-- Use paired and aligned depth when possible; colorized preview depth can reduce depth-only usefulness.
-
-### Run output
-
-```text
-runs/
-  YYYY-MM-DD_HH-MM-SS/
-    YOLOv8-seg/weights/best.pt
-    YOLOv9-seg/weights/best.pt
-    YOLOv11-seg/weights/best.pt
-    comparison.json
-```
-
----
-
-## Project Structure
-
-```text
-medtube_segmentation/
-  stream.sh             RealSense launcher
-  src/
-    capture_dataset.py  Dataset collection
-    realsense_stream.py Live preview
-    train_compare.py    YOLO model comparison training
-    train_kaggle.py     Kaggle single-model trainer
-  docs/                 Project notes and report material
-  tools/                QA and visualization utilities
-  annotation/           Staged images + manifest for annotation
-  data/                 Annotated dataset — YOLO format  (not committed)
-  dataset/              Raw collected frames             (not committed)
-  rs_env/               Python virtual environment       (not committed)
-```
+Classes are colour-coded in the live stream: Push-on = blue, Universal = red, Screwcap = green, Other = yellow.
