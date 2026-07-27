@@ -10,7 +10,7 @@ Real-time instance segmentation of medical tubes by cap type, developed as the u
 ## Results summary
 
 | Model | Input | Params | Box mAP₅₀₋₉₅ | Mask mAP₅₀₋₉₅ | ms/img |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | YOLO11n-RGBD | RGBD | 2.8 M | 0.988 | **0.929** | 22.4 |
 | YOLOv8m-seg | RGB | 27.2 M | 0.968 | 0.905 | 108.5 |
 | YOLO26n-seg | RGB | 2.7 M | 0.951 | 0.820 | 23.1 |
@@ -23,7 +23,7 @@ Evaluated on a 450-image held-out test split. Inference on Apple M1 Max CPU.
 
 ## Repository structure
 
-```
+```text
 medtube_segmentation/
 ├── src/
 │   ├── capture_dataset.py      # RealSense D415 data collection
@@ -60,7 +60,7 @@ medtube_segmentation/
 Large directories are gitignored and downloaded locally:
 
 | Directory | Contents | Source |
-|---|---|---|
+| --- | --- | --- |
 | `dataset/` | 30 × 100 raw RGB+depth frames | Captured locally |
 | `balanced_yolo/` | Class-balanced dataset variant | Roboflow export |
 | `depth_yolo/` | Depth-only dataset | `src/prepare_depth_dataset.py` |
@@ -94,7 +94,7 @@ pip install pyrealsense2 opencv-python numpy ultralytics roboflow matplotlib pil
 Displays a 2×2 grid: raw RGB · RGB+masks · depth heatmap · depth+masks.
 
 | Key | Action |
-|-----|--------|
+| --- | --- |
 | `M` | Cycle between loaded models |
 | `Space` | Save snapshot (4 panels) |
 | `R` | Toggle recording at 2 fps |
@@ -127,7 +127,7 @@ Outputs `fig_dataset_examples.png` and `fig_model_comparison.png` to `report/fig
 ## Class definitions
 
 | Class | Cap type | Recycling path |
-|---|---|---|
+| --- | --- | --- |
 | Push-on | 16 mm push-fit disc | Snap removal |
 | Universal | 31 mm wide screw-cap | Unscrew |
 | Screwcap | Narrow threaded (varied) | Unscrew |
