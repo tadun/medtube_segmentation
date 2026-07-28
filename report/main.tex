@@ -15,6 +15,7 @@
 \renewcommand{\MySupervisor}{Shiv Ashutosh Katiyar}
 \maketitle
 \onehalfspacing
+\raggedbottom
 %TC:endignore
 
 %%====================================================================
@@ -136,12 +137,12 @@ The annotated dataset was exported in YOLOv8 segmentation format and split into 
     \toprule
     \textbf{Class} & \textbf{Total} & \textbf{Train} & \textbf{Valid} & \textbf{Test} \\
     \midrule
-    Other      & 909  & 637  & 127 & 145 \\
-    Push-on    & 906  & 642  & 134 & 130 \\
-    Screwcap   & 716  & 506  & 109 & 101 \\
-    Universal  & 506  & 345  &  82 &  79 \\
+    Other      & 898  & 628  & 135 & 135 \\
+    Push-on    & 895  & 626  & 134 & 135 \\
+    Screwcap   & 707  & 495  & 106 & 106 \\
+    Universal  & 500  & 351  &  75 &  74 \\
     \midrule
-    \textbf{Total} & \textbf{3\,037} & \textbf{2\,130} & \textbf{452} & \textbf{455} \\
+    \textbf{Total} & \textbf{3\,000} & \textbf{2\,100} & \textbf{450} & \textbf{450} \\
     \bottomrule
   \end{tabular}
   \caption{Class distribution across dataset splits. Counts reflect individual tube instances.}
@@ -193,16 +194,16 @@ All RGB models were evaluated on the 450-image held-out test split using standar
 \section{Results}
 %%====================================================================
 
-\subsection{Model comparison}
-
-\Cref{tab:model_comparison} presents the test-set performance of all five models. YOLOv8m-seg achieved the highest mask mAP\textsubscript{50--95} (0.905) among RGB-only models, benefiting from full 100-epoch training and 27.2\,M parameters. Among lightweight models, YOLO26n-seg offered the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}), slightly outperforming YOLO11n-seg despite similar parameter counts. \Cref{fig:all_classes} shows a representative live inference result with all four tube classes correctly detected and segmented. Confidence scores across all four classes ranged from 0.96 to 0.97, with no confusion between classes.
-
 \begin{figure}[!htb]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_all_classes.png}
   \caption{All four tube classes detected simultaneously with YOLO26n-seg. Universal (red, 0.97), Push-on (blue, 0.96), Screwcap (green, 0.96), and Other (yellow, 0.96). Masks show pixel-level segmentation boundaries.}
   \label{fig:all_classes}
 \end{figure}
+
+\subsection{Model comparison}
+
+\Cref{tab:model_comparison} presents the test-set performance of all five models. YOLOv8m-seg achieved the highest mask mAP\textsubscript{50--95} (0.905) among RGB-only models, benefiting from full 100-epoch training and 27.2\,M parameters. Among lightweight models, YOLO26n-seg offered the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}), slightly outperforming YOLO11n-seg despite similar parameter counts. \Cref{fig:all_classes} shows a representative live inference result with all four tube classes correctly detected and segmented. Confidence scores across all four classes ranged from 0.96 to 0.97, with no confusion between classes.
 
 \begin{table}[!htb]
   \centering
@@ -315,7 +316,7 @@ Importantly, adding a depth channel to the nano architecture (YOLO11n-RGBD) reco
 
 Screwcap exhibited the lowest detection mAP\textsubscript{50} (0.954 versus 0.995 for other classes). This is partly explained by the lower instance count (716 versus 906 for Push-on) and the visual similarity between Screwcap and Push-on tubes: both have similar cap diameters and can be difficult to distinguish without physical handling. \Cref{fig:screwcap_comparison} shows this in practice: the nano model (YOLO26n-seg) misclassifies one Screwcap tube as Push-on with low confidence (0.57), whilst the larger YOLOv8m-seg correctly identifies all three tubes with high confidence (0.91--0.97). The gap between mAP\textsubscript{50} and mAP\textsubscript{50--95} (0.985 versus 0.806 overall) suggests that annotation polygon coarseness, rather than model failure, limits performance at higher IoU thresholds. Finer polygon annotation or re-annotation with newer SAM versions could reduce this gap.
 
-\begin{figure}[H]
+\begin{figure}[!htb]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_screwcap_comparison.png}
   \caption{Screwcap detection comparison. Left: YOLO26n-seg misclassifies one tube as Push-on (0.57). Right: YOLOv8m-seg correctly identifies all three as Screwcap (0.91--0.97), demonstrating the accuracy benefit of larger architectures.}
@@ -332,7 +333,7 @@ The depth-only model's strong performance (0.804 mask mAP\textsubscript{50--95})
 
 In the heatmap, the matte black surface appears as a warm-to-cool gradient across the frame---a mild tilt of the capture surface relative to the camera plane produces this rainbow-like depth band at the edges---while each tube appears as a cooler region of varying width and length depending on class. Universal tubes produce the widest, most prominent depth signature due to their large-diameter cap and body; Push-on tubes appear as narrow elongated strips; and the height difference between the tube body and the raised cap end is visible as a subtle step in the depth values. This cap-end elevation is the key feature that allows the depth-only model to distinguish between classes whose RGB appearance is ambiguous, and it is precisely the kind of geometric signal that is invisible in a standard camera image but captured reliably by stereo infrared ranging.
 
-\begin{figure}[H]
+\begin{figure}[!htb]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_depth_heatmap.png}
   \caption{Depth heatmap from the Intel RealSense D415 (TURBO colourmap, 2nd--98th percentile range). Warmer colours indicate greater distance from the camera. The flat matte surface provides a uniform depth baseline against which tube geometry is clearly distinguishable.}
