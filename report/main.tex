@@ -115,7 +115,7 @@ Unused VACUETTE blood collection tubes (Greiner Bio-One, Kremsm\"{u}nster, Austr
 
 \Cref{fig:dataset_examples} shows all 30 specimens. Humans distinguish tube classes primarily by cap size and profile: Universal caps are conspicuously wide, Push-on caps are smooth shallow discs, Screwcap closures are narrower, and Other encompasses non-standard designs. Cap colour provides an additional cue but is not always reliable. Screwcap and Push-on tubes are the most visually similar and can require physical handling to distinguish with certainty.
 
-\begin{figure}[H]
+\begin{figure}[!htb]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_dataset_examples.png}
   \caption{All 30 specimens in capture order. Segmentation polygons are colour-coded: Other (yellow), Push-on (blue), Screwcap (green), Universal (red). Coloured borders and labels indicate class.}
@@ -195,7 +195,7 @@ All RGB models were evaluated on the 450-image held-out test split using standar
 
 \subsection{Model comparison}
 
-\Cref{tab:model_comparison} presents the test-set performance of all five models. YOLOv8m-seg achieved the highest mask mAP\textsubscript{50--95} (0.905) among RGB-only models, benefiting from full 100-epoch training and 27.2\,M parameters. Among lightweight models, YOLO26n-seg offered the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}), slightly outperforming YOLO11n-seg despite similar parameter counts. \Cref{fig:all_classes} shows a representative live inference result with all four tube classes correctly detected and segmented.
+\Cref{tab:model_comparison} presents the test-set performance of all five models. YOLOv8m-seg achieved the highest mask mAP\textsubscript{50--95} (0.905) among RGB-only models, benefiting from full 100-epoch training and 27.2\,M parameters. Among lightweight models, YOLO26n-seg offered the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}), slightly outperforming YOLO11n-seg despite similar parameter counts. \Cref{fig:all_classes} shows a representative live inference result with all four tube classes correctly detected and segmented. Confidence scores across all four classes ranged from 0.96 to 0.97, with no confusion between classes.
 
 \begin{figure}[!htb]
   \centering
@@ -221,8 +221,6 @@ All RGB models were evaluated on the 450-image held-out test split using standar
   \label{tab:model_comparison}
 \end{table}
 
-\Cref{fig:model_comparison} shows the same results as a comparative bar chart.
-
 \begin{figure}[H]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_model_comparison.png}
@@ -230,7 +228,7 @@ All RGB models were evaluated on the 450-image held-out test split using standar
   \label{fig:model_comparison}
 \end{figure}
 
-Two observations stand out: first, the gap between box accuracy (solid) and mask accuracy (hatched) is consistent across all models, confirming that polygon boundary regression is harder than bounding-box regression regardless of architecture or modality; second, the RGBD model (green bars) achieves the highest values on both metrics despite having the same parameter count as the other nano models, making it the clear choice when a depth camera is available.
+Two observations stand out from \Cref{fig:model_comparison}: first, the gap between box and mask accuracy is consistent across all models, confirming that polygon regression is harder than bounding-box detection regardless of architecture; second, the RGBD model achieves the highest values on both metrics despite having the same parameter count as the other nano models, making it the clear choice when a depth camera is available.
 
 \subsection{Depth-channel experiments}
 

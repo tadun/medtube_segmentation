@@ -58,25 +58,25 @@
     \centering
     \vspace*{0.5cm}
     \hspace*{-3cm}\includegraphics[width=0.75\textwidth]{figures/uob_logo.png}\par
-    \vspace{0.8cm}
+    \vspace{0.6cm}
     {\large College of Engineering and Physical Sciences\par}
     {\large \MyDepartment\par}
-    \vspace{0.4cm}
+    \vspace{0.3cm}
     {\large MSc Robotics\par}
     {\large Advanced Project --- 2025--26 Session\par}
-    \vspace{0.6cm}
+    \vfill
     {\LARGE\bfseries FINAL REPORT\par}
     \vspace{0.8cm}
     {\LARGE\bfseries \myTitle\par}
-    \vspace{1.2cm}
-    {\Large \MyAuthor\par}
-    \vspace{0.3cm}
-    {\large Student ID: \ID\par}
-    \vspace{0.3cm}
-    {\large Supervisor: \MySupervisor\par}
-    \vspace{0.8cm}
-    {\large \today\par}
     \vfill
+    {\Large \MyAuthor\par}
+    \vspace{0.5cm}
+    {\large Student ID: \ID\par}
+    \vspace{0.5cm}
+    {\large Supervisor: \MySupervisor\par}
+    \vfill
+    {\large \today\par}
+    \vspace{0.5cm}
   \end{titlepage}
   %% Abstract page
   \newpage
