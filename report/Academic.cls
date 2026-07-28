@@ -57,7 +57,7 @@
   \begin{titlepage}
     \centering
     \vspace*{0.5cm}
-    \hspace*{-3cm}\includegraphics[width=0.75\textwidth]{figures/uob_logo.png}\par
+    \hspace*{-3.2cm}\includegraphics[width=0.75\textwidth]{figures/uob_logo.png}\par
     \vspace{0.6cm}
     {\large College of Engineering and Physical Sciences\par}
     {\large \MyDepartment\par}
