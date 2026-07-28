@@ -46,6 +46,7 @@
 \newcommand{\MyDepartment}{Department Here}
 \newcommand{\ID}{1234567}
 \newcommand{\Keywords}{Keyword 1, Keyword 2}
+\newcommand{\MySupervisor}{Supervisor's Name}
 
 %% ── Abstract storage ──
 \newcommand{\myabstract}[1]{\long\gdef\@abstractcontent{#1}}
@@ -56,20 +57,24 @@
   \begin{titlepage}
     \centering
     \vspace*{0.5cm}
-    \hspace*{-2cm}\includegraphics[width=0.75\textwidth]{figures/uob_logo.png}\par
-    \vspace{1cm}
-    {\large School of Engineering\par}
+    \hspace*{-3cm}\includegraphics[width=0.75\textwidth]{figures/uob_logo.png}\par
+    \vspace{0.8cm}
+    {\large College of Engineering and Physical Sciences\par}
     {\large \MyDepartment\par}
-    \vspace{2cm}
+    \vspace{0.4cm}
+    {\large MSc Robotics\par}
+    {\large Advanced Project --- 2025--26 Session\par}
+    \vspace{0.6cm}
+    {\LARGE\bfseries FINAL REPORT\par}
+    \vspace{0.8cm}
     {\LARGE\bfseries \myTitle\par}
-    \vspace{1.5cm}
+    \vspace{1.2cm}
     {\Large \MyAuthor\par}
-    \vspace{0.5cm}
+    \vspace{0.3cm}
     {\large Student ID: \ID\par}
-    \vspace{2cm}
-    {\large A report submitted in partial fulfilment of the requirements\\
-    for the degree of Master of Science\par}
-    \vspace{1.5cm}
+    \vspace{0.3cm}
+    {\large Supervisor: \MySupervisor\par}
+    \vspace{0.8cm}
     {\large \today\par}
     \vfill
   \end{titlepage}

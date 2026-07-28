@@ -12,6 +12,7 @@
 \renewcommand{\MyDepartment}{Department of Mechanical Engineering}
 \renewcommand{\ID}{3035743}
 \renewcommand{\Keywords}{Instance Segmentation, Medical Tubes, YOLO, RGB-D Fusion, Circular Economy}
+\renewcommand{\MySupervisor}{Shiv Ashutosh Katiyar}
 \maketitle
 \onehalfspacing
 %TC:endignore
@@ -20,239 +21,15 @@
 \section{Introduction}
 %%====================================================================
 
-Healthcare facilities worldwide generate large quantities of single-use plastic waste. The World Health Organization estimates that 85\% of health-care waste is non-hazardous and potentially recyclable, yet high-income countries still produce approximately 0.5\,kg of hazardous waste per hospital bed per day~\supercite{who2024healthcare}. In the United States alone, hospitals generate over five million tonnes of waste annually~\supercite{windfeld2015medical}. The COVID-19 pandemic made this worse: in England, over 27\,000 tonnes of personal protective equipment were distributed within six months~\supercite{rizan2021environmental}, showing the scale of single-use medical plastics entering waste streams. Studies of medical plastic recyclability have shown that polypropylene (PP) and polystyrene (PS) tubes---the main materials in blood collection and sample containers---can be recycled at rates of 70--80\% when properly sorted~\supercite{lee2004medical}. The NHS has committed to achieving net-zero emissions by 2040 for directly controlled emissions~\supercite{nhs2022netzero}, creating strong motivation for automated waste-sorting solutions.
+Every large hospital processes thousands of blood collection tubes each day; virtually all are incinerated. In England alone, healthcare generates an estimated 156,000\,tonnes of clinical waste annually, the majority of which is non-hazardous and potentially recoverable~\supercite{who2024healthcare,windfeld2015medical}. The COVID-19 pandemic highlighted the scale: over 27,000\,tonnes of personal protective equipment were distributed in England within six months~\supercite{rizan2021environmental}. Polypropylene and polyethylene tubes, which make up the bulk of blood collection containers, can be recovered and reused as material at rates of 70--80\% when properly segregated by type~\supercite{lee2004medical}; cap removal further enables component-level recovery of both body and closure materials. The NHS commitment to net-zero emissions by 2040~\supercite{nhs2022netzero} provides strong institutional motivation to divert these materials from incineration.
 
-Manual sorting of medical tubes is labour-intensive, error-prone, and exposes workers to sharps-related hazards~\supercite{chartier2014safe}. Computer vision offers a scalable alternative. The YOLO (You Only Look Once) family of detectors~\supercite{redmon2016yolo} enables real-time object detection by treating localisation as a single regression problem. The original YOLO architecture divided the input image into a grid and predicted bounding boxes and class probabilities in a single forward pass, achieving speeds of 45\,fps on contemporary hardware. Subsequent versions have built upon this foundation: YOLOv5 introduced an anchor-free detection head and CSPDarknet backbone, YOLOv8~\supercite{jocher2023yolov8} added a decoupled head for separate classification and regression branches, and YOLO11~\supercite{jocher2024yolo11} improved feature extraction efficiency for mobile deployment. The YOLO26 architecture further introduces end-to-end NMS-free inference, eliminating the non-maximum suppression post-processing step. Instance segmentation extends detection by predicting pixel-level masks for each detected object, providing precise spatial boundaries rather than approximate bounding boxes. Mask~R-CNN~\supercite{he2017maskrcnn} established the two-stage approach (region proposal followed by mask prediction), whilst YOLO-seg variants achieve similar mask quality at much higher throughput by sharing the detection backbone for mask generation.
+Manual sorting of medical tubes is labour-intensive, error-prone, and exposes workers to contaminated biological samples~\supercite{chartier2014safe}. Computer vision offers a scalable alternative. The YOLO (You Only Look Once) family of detectors~\supercite{redmon2016yolo} enables real-time object detection by treating localisation as a single regression problem. Subsequent versions built on the original architecture: YOLOv8~\supercite{jocher2023yolov8} added a decoupled head for separate classification and regression branches, YOLO11~\supercite{jocher2024yolo11} improved feature extraction efficiency for mobile deployment, and YOLO26 introduced end-to-end NMS-free inference. Instance segmentation extends detection by predicting pixel-level masks for each detected object, providing precise spatial boundaries rather than approximate bounding boxes. Mask~R-CNN~\supercite{he2017maskrcnn} established the two-stage approach, whilst YOLO-seg variants achieve similar mask quality at much higher throughput by sharing the detection backbone for mask generation.
 
-For a tube-sorting application, instance masks offer three concrete advantages over bounding-box detection. First, they supply the tube's centroid and principal axis, enabling a downstream air-jet actuator to target the cap end of the tube precisely rather than the centre of an enclosing rectangle. Second, when tubes are adjacent or partially overlapping on a conveyor belt, axis-aligned bounding boxes merge into a single region and cannot distinguish individual objects, whereas instance masks preserve separate, non-rectangular boundaries for each tube. Third, automated cap-removal disassembly---required to separate polypropylene caps from tube bodies for component-level recycling---demands pixel-level knowledge of where the cap meets the tube shaft; bounding boxes cannot provide this localisation.
+For a tube-sorting application, instance masks offer three concrete advantages over bounding-box detection. First, per-tube mask centroids and principal axes will guide a downstream air-jet actuator to the correct position on the tube, a capability that becomes critical once the system is deployed on a moving belt. Second, when tubes are adjacent on a conveyor, axis-aligned bounding boxes merge into a single region and cannot distinguish individual objects, whereas instance masks preserve separate, non-rectangular boundaries. Third, component-level disassembly requires pixel-level knowledge of where the cap meets the tube shaft; bounding boxes cannot provide this, and the present work lays the mask-level foundation for that downstream step.
 
-Depth sensing provides additional geometric information that can improve object detection and classification. The Intel RealSense D400 series uses active infrared stereo to generate dense depth maps at video frame rates~\supercite{keselman2017realsense}. The D415 model projects a structured infrared pattern onto the scene and computes disparity between left and right infrared cameras to triangulate depth at each pixel, achieving sub-millimetre precision at short range. Previous work has shown that combining RGB and depth channels through multi-stream convolutional architectures improves recognition, particularly under occlusion and lighting variation~\supercite{eitel2015rgbd}. Gupta et al.~\supercite{gupta2014learning} demonstrated that encoding depth as HHA (horizontal disparity, height above ground, angle with gravity) provides a CNN-compatible three-channel representation that outperforms raw depth input. Depth is especially relevant for medical tubes because their transparent and reflective plastic surfaces often cause problems for RGB-only systems---specular highlights, colour ambiguity under varying lighting, and transparent tube bodies can confuse purely colour-based classifiers. Depth maps, by contrast, reliably capture the tube's physical shape regardless of surface appearance. These considerations motivate the inclusion of depth-channel training in this project, where paired RGB--depth data are fused into four-channel RGBD inputs and also evaluated as depth-only single-channel models. A further practical benefit of depth is metric localisation: by applying the camera's intrinsic calibration to pixel-space detections, each mask centroid can be converted to a millimetre-accurate 3D coordinate, giving a downstream conveyor-belt actuator the belt position and arrival time needed to trigger an air jet at the correct moment---something that pixel coordinates alone cannot provide.
+Depth sensing provides additional geometric information that can improve object detection and classification. The Intel RealSense D400 series uses active infrared stereo to generate dense depth maps at video frame rates~\supercite{keselman2017realsense}. The D415 model projects a structured infrared pattern onto the scene and computes disparity between left and right infrared cameras to triangulate depth at each pixel, achieving sub-millimetre precision at short range. Previous work has shown that combining RGB and depth channels through multi-stream convolutional architectures improves recognition, particularly under occlusion and lighting variation~\supercite{eitel2015rgbd}. Gupta et al.~\supercite{gupta2014learning} demonstrated that encoding depth as HHA (horizontal disparity, height above ground, angle with gravity) provides a CNN-compatible three-channel representation that outperforms raw depth input. Depth is especially relevant for medical tubes because their transparent and reflective plastic surfaces often cause problems for RGB-only systems---specular highlights, colour ambiguity under varying lighting, and transparent tube bodies can confuse purely colour-based classifiers. This is particularly relevant for VACUETTE-type tubes, many of which have transparent or semi-transparent bodies whose cap colours also vary between manufacturers and batches. Depth maps, by contrast, reliably capture the tube's physical shape regardless of surface appearance. These considerations motivate the inclusion of depth-channel training in this project, where paired RGB--depth data are fused into four-channel RGBD inputs and also evaluated as depth-only single-channel models. A further benefit of depth is that it enables metric localisation: applying the camera's intrinsic calibration to pixel-space detections would in principle convert each mask centroid to a millimetre-accurate 3D coordinate, giving a downstream actuator the belt position needed to trigger an air jet at precisely the right moment. This capability is not yet implemented in the present work but is directly supported by the depth hardware already in place, and is discussed as a priority for future integration.
 
-This project extends earlier work by Buamah, who developed a digital-twin framework for medical tube segregation using reinforcement learning (RL) with PPO and SAC algorithms to control pneumatic air jets on a simulated conveyor belt. That system used PyBullet physics simulation to model tube dynamics on a moving belt, with a YOLOv8n object detector providing tube positions to the RL agent. The detector was trained on 1\,000 synthetic rendered images at 320$\times$320 resolution, achieving limited classification accuracy that constrained the RL agent's sorting performance. The present work addresses this gap by building a high-quality annotated dataset of real medical tube images and comparing multiple YOLO segmentation architectures across RGB, RGBD, and depth-only modalities to find the best model for real-time tube classification. The specific objectives are: (1)~to collect and annotate a dataset of medical tube images captured with an Intel RealSense D415 depth camera; (2)~to train and evaluate YOLO-family models for four-class instance segmentation across different input modalities; and (3)~to demonstrate real-time inference with live camera input as a proof-of-concept for integration with downstream sorting hardware.
-
-%%====================================================================
-\section{Methods}
-%%====================================================================
-
-\subsection{Hardware and capture environment}
-
-Data were collected using an Intel RealSense D415 stereo depth camera (Intel Corporation, Santa Clara, USA) connected via USB~3.2 to an Apple M1~Max workstation (64\,GB unified memory). The D415 has a stereo baseline of 55\,mm, a depth field of view of 65\textdegree{}$\times$40\textdegree{}, and an optimal operating range of 0.3--3\,m; it was selected for its high depth accuracy at short working distances. The camera was mounted inverted above a matte black surface at a height of approximately 450--550\,mm (calibrated depth range 435--535\,mm to tube surfaces), capturing aligned RGB and 16-bit depth streams at 1280$\times$720 resolution and 30\,fps. A ring light provided even illumination to reduce specular reflections on tube surfaces. The matte black background was chosen to maximise contrast with tube specimens and to provide a uniform depth baseline for the stereo matching algorithm.
-
-Three depth post-processing filters were applied in sequence through the librealsense SDK~\supercite{keselman2017realsense}: (1)~a spatial edge-preserving filter to smooth depth noise while maintaining object boundaries; (2)~a temporal filter to average consecutive frames and reduce flickering; and (3)~a hole-filling filter to interpolate missing depth values caused by infrared reflection on glossy tube surfaces. Despite these filters, some depth artefacts persisted on the matte surface itself (which absorbs infrared), producing scattered black holes in the depth map that were addressed by clamping the depth colourmap range to the 2nd--98th percentile of valid values.
-
-\subsection{Tube specimens and classification scheme}
-
-Unused VACUETTE blood collection tubes (Greiner Bio-One, Kremsm\"{u}nster, Austria) were used throughout. No patient samples or biohazardous material was involved; ethical approval was obtained from the University of Birmingham. Four classes were defined based on cap closure mechanism, which determines disassembly and recycling pathway~\supercite{lee2004medical}. \Cref{tab:tube_classes} summarises the classification scheme.
-
-\begin{table}[!htb]
-  \centering
-  \begin{tabular}{lll}
-    \toprule
-    \textbf{Class} & \textbf{Cap type} & \textbf{Description} \\
-    \midrule
-    Universal  & 31\,mm screw-cap    & General sample collection tubes \\
-    Push-on    & 16\,mm push-fit cap & Blood collection tubes (most common) \\
-    Screwcap   & Threaded (varied)   & Other screw-threaded tubes of varying diameter \\
-    Other      & Non-standard        & Mixed cap types requiring manual handling \\
-    \bottomrule
-  \end{tabular}
-  \caption{Tube classification scheme based on cap closure mechanism.}
-  \label{tab:tube_classes}
-\end{table}
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/fig_dataset_examples.png}
-  \caption{All 30 tube specimens in the dataset, arranged by tube number (1--30). Each image is cropped around the annotated tube; the segmentation polygon is drawn in the class colour (Other: yellow; Push-on: blue; Screwcap: green; Universal: red). Coloured borders and titles identify each specimen's class. The 30 sessions span a range of tube sizes, label designs, and cap profiles, captured by the Intel RealSense D415 against a matte black background.}
-  \label{fig:dataset_examples}
-\end{figure}
-
-\Cref{fig:dataset_examples} illustrates the visual diversity across all 30 capture sessions. The class-discriminating features are concentrated in the cap region: Push-on caps are smooth, shallow discs; Universal caps are conspicuously wide with a prominent threaded collar; Screwcap closures are narrower with visible thread ridges; and the Other category encompasses a variety of non-standard designs including larger vented caps and elongated closures. Despite the strong inter-class similarity in overall tube shape---all specimens are long cylinders viewed from above---these cap-specific profiles provide the discriminative features exploited by the trained models.
-
-\subsection{Data collection and annotation}
-
-Thirty capture sessions were conducted, each recording exactly 100 frames of a specific tube placed in varied orientations. A total of 3\,000 RGB images were collected, with paired depth maps stored alongside. Each session focused on a single tube specimen to ensure diverse pose coverage per tube, with tubes rotated, translated, and grouped differently across frames.
-
-Images were staged and uploaded to Roboflow (Roboflow Inc., Des Moines, USA)~\supercite{ciaglia2022rf100} for annotation. Polygon segmentation masks were generated using SAM\,3 (Segment Anything Model, version~3)~\supercite{kirillov2023sam} auto-detection with manual refinement to correct boundary inaccuracies. The SAM\,3 model produced initial mask proposals for each tube, which were then reviewed and corrected by hand: cap boundaries were tightened, label text regions were included within the tube mask, and any bleed into the background was trimmed. Data quality was further verified by automated checks: four images with malformed bounding-box-format labels (five values instead of polygon coordinates) were identified and removed, and fifteen images with empty label files (where SAM\,3 failed to detect the tube) were manually annotated from scratch.
-
-The annotated dataset was exported in YOLOv8 segmentation format and split into training (2\,100 images), validation (450 images), and test (450 images) subsets. To address class imbalance (Universal had the fewest instances), a rebalanced version of the dataset was also created by oversampling minority classes to equalise representation. \Cref{tab:class_dist} summarises the class distribution of the primary dataset.
-
-\begin{table}[!htb]
-  \centering
-  \begin{tabular}{lrrrr}
-    \toprule
-    \textbf{Class} & \textbf{Total} & \textbf{Train} & \textbf{Valid} & \textbf{Test} \\
-    \midrule
-    Other      & 909  & 637  & 127 & 145 \\
-    Push-on    & 906  & 642  & 134 & 130 \\
-    Screwcap   & 716  & 506  & 109 & 101 \\
-    Universal  & 506  & 345  &  82 &  79 \\
-    \midrule
-    \textbf{Total} & \textbf{3\,037} & \textbf{2\,130} & \textbf{452} & \textbf{455} \\
-    \bottomrule
-  \end{tabular}
-  \caption{Class distribution across dataset splits. Counts reflect individual tube instances.}
-  \label{tab:class_dist}
-\end{table}
-
-\subsection{Model architectures}
-
-Five models were selected for comparison, spanning different scales and input modalities. \Cref{tab:architectures} summarises their key properties.
-
-\begin{table}[!htb]
-  \centering
-  \begin{tabular}{llcl}
-    \toprule
-    \textbf{Model} & \textbf{Input} & \textbf{Params} & \textbf{Key features} \\
-    \midrule
-    YOLOv8m-seg  & RGB (3-ch)  & 27.2\,M & CSPDarknet + FPN neck \\
-    YOLO11n-seg  & RGB (3-ch)  & 2.8\,M  & Improved feature extraction \\
-    YOLO26n-seg  & RGB (3-ch)  & 2.7\,M  & NMS-free end-to-end inference \\
-    YOLO11n-RGBD & RGBD (4-ch) & 2.8\,M  & Modified input layer for depth \\
-    YOLO26n-depth& Depth (1-ch)& 2.7\,M  & Single-channel depth input \\
-    \bottomrule
-  \end{tabular}
-  \caption{Model architectures compared in this study.}
-  \label{tab:architectures}
-\end{table}
-
-\subsection{Training configuration}
-
-YOLOv8m-seg was trained locally on the M1~Max CPU using PyTorch~2.12.0~\supercite{paszke2019pytorch} with the Ultralytics framework (v8.4.56). No NVIDIA GPU was available; Apple Metal Performance Shaders (MPS) support was verified but training defaulted to CPU for stability due to occasional numerical differences on the MPS backend. Training ran for 100 epochs ($\sim$55\,hours wall-clock time) with batch size~8, image size~640, AdamW optimiser (lr$_0$\,=\,0.01, weight decay\,=\,0.0005), and early stopping patience of 20 epochs. The learning rate followed a cosine annealing schedule from 0.01 to 0.0001 over the training duration.
-
-Data augmentation followed the mosaic strategy~\supercite{bochkovskiy2020yolov4,shorten2019augmentation}, which combines four training images into a single composite to increase object diversity per batch. Additional augmentations included: horizontal and vertical flip (probability~0.5 each), HSV hue jitter\,=\,0.015, saturation jitter\,=\,0.7, value jitter\,=\,0.4, rotation up to 180\textdegree{} (exploiting tube rotational symmetry), scale\,=\,0.5, perspective warp\,=\,0.0005, and random erasing\,=\,0.4 to simulate partial occlusion. The aggressive rotation range was justified by the controlled overhead capture setup: tubes can appear at any angle relative to the camera and have no inherent ``upright'' orientation.
-
-YOLO11n-seg and YOLO26n-seg were trained on Roboflow's cloud GPU infrastructure using the same dataset and default augmentation presets. YOLO26n-depth was also trained on Roboflow using the depth-only version of the dataset, where each single-channel depth image was replicated to three channels to match the network's expected input dimensions.
-
-For the RGBD experiment, paired depth maps were aligned to RGB frames using the RealSense SDK's hardware registration and concatenated as a fourth channel. The 16-bit raw depth values (in units of 0.001\,m) were normalised to the 0--255 range based on the calibrated scene depth range (435--535\,mm), then appended to the 8-bit RGB channels. The YOLO11n architecture was modified at the first convolutional layer to accept 4-channel input (kernel size unchanged, input channel count increased from 3 to 4). YOLO11n-RGBD was trained locally for 100 epochs on four-channel RGBD images with the same augmentation settings as the RGB models.
-
-A YOLO26n model was additionally trained on the class-balanced dataset to evaluate whether equalising class representation improves minority-class performance. The balanced dataset was constructed by oversampling images containing minority classes (Screwcap, Universal) to achieve approximately equal instance counts across all four classes.
-
-\subsection{Evaluation protocol}
-
-All RGB models were evaluated on the 450-image held-out test split using standard COCO metrics~\supercite{lin2014coco,padilla2020survey}: bounding-box mAP at IoU\,=\,0.50 (mAP\textsubscript{50}) and averaged over IoU thresholds 0.50--0.95 in steps of 0.05 (mAP\textsubscript{50--95}). Mask mAP was computed for all models by measuring the IoU between predicted and ground-truth segmentation polygons at the same threshold range. Precision and recall were computed at IoU\,=\,0.50 for both box and mask predictions. Inference speed was measured as end-to-end latency per image (including pre-processing, forward pass, and post-processing) on the M1~Max CPU, averaged over the full test set. All evaluations used the Ultralytics validation pipeline with batch size~8 and image size~640.
-
-%%====================================================================
-\section{Results}
-%%====================================================================
-
-\subsection{Model comparison}
-
-\Cref{tab:model_comparison} presents the test-set performance of all five models. YOLOv8m-seg achieved the highest mask mAP\textsubscript{50--95} (0.905) among RGB-only models, benefiting from full 100-epoch training and 27.2\,M parameters. Among lightweight models, YOLO26n-seg offered the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}), slightly outperforming YOLO11n-seg despite similar parameter counts. \Cref{fig:all_classes} shows a representative live inference result with all four tube classes correctly detected and segmented.
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/fig_all_classes.png}
-  \caption{All four tube classes detected simultaneously with YOLO26n-seg. Universal (red, 0.97), Push-on (blue, 0.96), Screwcap (green, 0.96), and Other (yellow, 0.96). Masks show pixel-level segmentation boundaries.}
-  \label{fig:all_classes}
-\end{figure}
-
-\begin{table}[!htb]
-  \centering
-  \begin{tabular}{llcccc}
-    \toprule
-    \textbf{Model} & \textbf{Input} & \textbf{Params} & \textbf{Box mAP\textsubscript{50--95}} & \textbf{Mask mAP\textsubscript{50--95}} & \textbf{ms/img} \\
-    \midrule
-    YOLO11n-RGBD  & RGBD  & 2.8\,M  & 0.988 & 0.929 & 22.4 \\
-    YOLOv8m-seg   & RGB   & 27.2\,M & 0.968 & 0.905 & 108.5 \\
-    YOLO26n-seg   & RGB   & 2.7\,M  & 0.951 & 0.820 & 23.1 \\
-    YOLO11n-seg   & RGB   & 2.8\,M  & 0.949 & 0.820 & 21.7 \\
-    YOLO26n-depth & Depth & 2.7\,M  & 0.919 & 0.804 & 22.8 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Model comparison at 640$\times$640. Inference on M1~Max CPU. Sorted by mask mAP\textsubscript{50--95}.}
-  \label{tab:model_comparison}
-\end{table}
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/fig_model_comparison.png}
-  \caption{Grouped bar chart comparing box mAP\textsubscript{50--95} (solid bars) and mask mAP\textsubscript{50--95} (hatched bars) for all five models. Colour indicates input modality: blue~=~RGB, green~=~RGBD, orange~=~depth-only. YOLO11n-RGBD achieves the highest mask score despite using only 2.8\,M parameters.}
-  \label{fig:model_comparison}
-\end{figure}
-
-\Cref{fig:model_comparison} visualises the same results as a comparative bar chart. Two observations stand out: first, the gap between box accuracy (solid) and mask accuracy (hatched) is consistent across all models, confirming that polygon boundary regression is harder than bounding-box regression regardless of architecture or modality; second, the RGBD model (green bars) achieves the highest values on both metrics despite having the same parameter count as the other nano models, making it the clear choice when a depth camera is available.
-
-\subsection{Depth-channel experiments}
-
-The RGBD four-channel model (YOLO11n-RGBD) achieved the highest mask mAP\textsubscript{50--95} of 0.929 and box mAP\textsubscript{50--95} of 0.988 across all models. This shows that adding the depth channel to a lightweight nano model can exceed the accuracy of a much larger RGB-only model (YOLOv8m-seg, 27.2\,M parameters) while running at nearly the same speed as the nano baseline. The improvement is most pronounced for classes with similar colour profiles but different geometric features: Screwcap versus Universal tubes both have metallic threaded caps, but differ in cap height and tube diameter---features that are directly encoded in the depth channel.
-
-The depth-only single-channel model (YOLO26n-depth) achieved 0.804 mask mAP\textsubscript{50--95}, showing that geometric shape information alone---without any colour---provides enough information for tube classification. This result was surprising given that cap colour is the most visually obvious distinguishing feature to human observers. The model appears to have learned class-discriminative shape features: Push-on caps have a characteristic flat disc profile at one end, Universal tubes are wider with a prominent threaded collar, Screwcap tubes have a narrower threaded profile, and Other tubes have irregular or elongated closure geometries. These shape differences, while subtle to the human eye in 2D images, produce distinct depth signatures when viewed from above.
-
-The practical value of depth-based classification extends beyond accuracy. In clinical environments, tubes may become discoloured through chemical exposure, label adhesive may obscure cap colours, or overhead lighting may produce colour-shifting specular reflections. A depth-based model is inherently immune to all of these failure modes, since the infrared stereo measurement operates independently of visible-light conditions. This makes depth a complementary modality that provides robustness where RGB alone is unreliable.
-
-\subsection{Per-class analysis}
-
-\Cref{tab:perclass} shows the per-class test results for YOLOv8m-seg. Box detection was near-perfect across all classes (mAP\textsubscript{50}\,$\geq$\,0.954). The largest mask-quality gap appeared for the Other class, where mAP\textsubscript{50--95} dropped to 0.748. Universal tubes, with their symmetrical cylindrical geometry, achieved the highest mask mAP\textsubscript{50--95} of 0.887. Training on the class-balanced dataset improved Screwcap and Universal detection consistency, confirming that the imbalance between classes affected minority-class performance. \Cref{fig:confusion} shows the normalised confusion matrix for YOLOv8m-seg on the test split.
-
-\begin{table}[!htb]
-  \centering
-  \begin{tabular}{lcccc}
-    \toprule
-    \textbf{Class} & \textbf{Box mAP\textsubscript{50}} & \textbf{Box mAP\textsubscript{50--95}} & \textbf{Mask mAP\textsubscript{50}} & \textbf{Mask mAP\textsubscript{50--95}} \\
-    \midrule
-    All        & 0.985 & 0.968 & 0.985 & 0.806 \\
-    Other      & 0.995 & 0.957 & 0.995 & 0.748 \\
-    Push-on    & 0.995 & 0.978 & 0.995 & 0.791 \\
-    Screwcap   & 0.954 & 0.945 & 0.954 & 0.798 \\
-    Universal  & 0.995 & 0.993 & 0.995 & 0.887 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Per-class results for YOLOv8m-seg (best checkpoint, epoch~85) on 449 test images.}
-  \label{tab:perclass}
-\end{table}
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/fig_confusion_matrix.png}
-  \caption{Normalised confusion matrix for YOLOv8m-seg on the 450-image test split. Diagonal values close to 1.0 indicate high classification accuracy. The main source of confusion is between Screwcap and Push-on classes, consistent with their visual similarity.}
-  \label{fig:confusion}
-\end{figure}
-
-\subsection{Training dynamics}
-
-The YOLOv8m-seg training run reached peak validation mask mAP\textsubscript{50--95} of 0.911 at epoch~85, after which performance plateaued. Box losses converged smoothly from epoch~20 onwards, whilst mask losses showed higher variance due to the difficulty of polygon boundary regression. No overfitting was observed; training and validation losses remained closely tracked throughout. \Cref{fig:training} shows the loss and metric curves over 100 epochs.
-
-Three distinct phases are visible in the curves. During the first ten epochs, all loss terms drop rapidly as the model learns coarse object boundaries from scratch. Between epochs 10 and 70, box metrics stabilise whilst mask losses continue to decrease slowly, reflecting the finer-grained nature of polygon regression compared to axis-aligned bounding-box prediction. From epoch 70 onwards, validation metrics plateau and oscillate within a narrow band, indicating that the model has converged to a local optimum under the given data and augmentation regime. The persistent gap between box mAP\textsubscript{50--95} (0.968) and mask mAP\textsubscript{50--95} (0.905) visible throughout training suggests that annotation polygon coarseness, not model capacity, is the primary ceiling on mask quality.
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/fig_training_curves.png}
-  \caption{YOLOv8m-seg training and validation curves over 100 epochs. Row~1: training losses (box, segmentation, classification, DFL, semantic) and box precision. Row~2: box recall, box mAP\textsubscript{50}, box mAP\textsubscript{50--95}, and validation losses. Row~3: validation DFL and semantic losses, mask precision, recall, mAP\textsubscript{50}, and mAP\textsubscript{50--95}. Blue dots show per-epoch values; orange dashed lines show smoothed trends.}
-  \label{fig:training}
-\end{figure}
-
-\subsection{Real-time inference}
-
-A live inference pipeline was implemented using the YOLO26n-seg model (selected for its combination of speed and accuracy). The system captures aligned RGB and depth frames from the RealSense D415 at 30\,fps, runs YOLO inference on the RGB frame, and renders a 2$\times$2 grid display (\Cref{fig:pipeline}): (a)~raw RGB stream showing the camera feed; (b)~RGB with colour-coded segmentation masks overlaid at 50\% opacity; (c)~depth heatmap using the TURBO colourmap clipped to the calibrated depth range; and (d)~depth heatmap with the same segmentation masks projected onto the depth view. This four-panel layout allows the operator to simultaneously verify detection accuracy (panel~b), depth quality (panel~c), and spatial alignment between RGB and depth modalities (panel~d).
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/fig_pipeline_grid.png}
-  \caption{Live inference pipeline showing the 2$\times$2 display grid as seen by the operator. Top-left: raw RGB stream. Top-right: RGB with segmentation masks. Bottom-left: depth heatmap (TURBO colourmap). Bottom-right: depth with masks overlaid. The HUD bar shows current model, recording state, FPS, and session statistics.}
-  \label{fig:pipeline}
-\end{figure}
-
-Class-specific colour coding (Universal\,=\,red, Screwcap\,=\,green, Push-on\,=\,blue, Other\,=\,yellow) provides immediate visual feedback. Each detected tube is annotated with its class label and confidence score. Users can switch between all trained models at runtime using the M key, allowing direct visual comparison of model outputs on the same scene without restarting the application. The pipeline also supports snapshot capture (saving all four panels as separate PNG files) and continuous recording at 2\,fps for later review.
-
-The system was tested with up to four tubes simultaneously in the field of view. \Cref{fig:inference_pair} shows both a single-tube detection and a multi-instance scenario, demonstrating that the model handles multiple adjacent objects without confusion. The pipeline maintains interactive frame rates (30--45\,fps for nano models, 9--10\,fps for YOLOv8m) on the M1~Max CPU, showing the system is practical for deployment-stage monitoring.
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/fig_inference_pair.png}
-  \caption{Live inference examples. Left: single Universal tube detected (0.93). Right: four Push-on tubes detected simultaneously (0.82--0.97), showing correct multi-instance segmentation without merging adjacent objects.}
-  \label{fig:inference_pair}
-\end{figure}
-
-%%====================================================================
-\section{Discussion}
-%%====================================================================
-
-\subsection{Model scale and accuracy}
-
-The results show a clear trade-off between model size and segmentation accuracy. The medium-scale YOLOv8m-seg (27.2\,M parameters) achieved the highest RGB mask mAP\textsubscript{50--95} of 0.905, while the nano-scale models (YOLO11n, YOLO26n, both $\sim$2.7\,M parameters) reached 0.820---a 9.4\% relative drop---whilst being 4.7$\times$ faster. For real-time deployment where latency is critical, this trade-off is acceptable: a 21.7\,ms inference time corresponds to 46\,fps, well above the 30\,fps camera rate. The speed difference is particularly apparent in the live stream: YOLOv8m-seg runs at approximately 9\,fps (noticeable lag when tubes are moved), whilst the nano models track movement smoothly.
-
-Importantly, adding a depth channel to the nano architecture (YOLO11n-RGBD) recovered most of this accuracy gap (0.929 mask mAP\textsubscript{50--95}) without increasing inference time. This suggests that depth fusion is the most practical path to high-accuracy real-time segmentation: rather than scaling up the model (which increases latency and memory requirements), adding geometric information from an inexpensive depth sensor achieves better results at the same computational cost. The D415 camera adds no processing overhead since depth frames are computed on-device by the camera's ASIC and arrive pre-aligned with RGB frames. \Cref{fig:pipeline_flow} summarises the end-to-end project pipeline from data collection through live inference.
+This project extends earlier work by Jessiah Buamah, who developed a digital-twin framework for medical tube segregation using reinforcement learning with PPO and SAC algorithms to control pneumatic air jets on a simulated conveyor belt. That system used PyBullet physics simulation with a YOLOv8n detector trained on fewer than 1,000 synthetic images, without a standardised background, controlled lighting, or sufficient class diversity, resulting in limited classification accuracy that constrained the RL agent's sorting performance. The present work addresses this gap by building a high-quality annotated dataset of real medical tube images and comparing multiple YOLO segmentation architectures across RGB, RGBD, and depth-only modalities to find the best model for real-time tube classification. The specific objectives are: (1)~to collect and annotate a dataset of medical tube images captured with an Intel RealSense D415 depth camera; (2)~to train and evaluate YOLO-family models for four-class instance segmentation across different input modalities; and (3)~to demonstrate real-time inference with live camera input as a proof-of-concept for integration with downstream sorting hardware. \Cref{fig:pipeline_flow} summarises the end-to-end pipeline adopted in this work.
 
 \begin{figure}[!htb]
 \centering
@@ -306,11 +83,241 @@ Importantly, adding a depth channel to the nano architecture (YOLO11n-RGBD) reco
   \label{fig:pipeline_flow}
 \end{figure}
 
-\subsection{Class-level performance and annotation quality}
+%%====================================================================
+\section{Methods}
+%%====================================================================
 
-Screwcap exhibited the lowest detection mAP\textsubscript{50} (0.954 versus 0.995 for other classes). This is partly explained by the lower instance count (716 versus 906 for Push-on) and the visual similarity between Screwcap and Universal tubes, both of which have threaded closures. \Cref{fig:screwcap_comparison} shows this in practice: the nano model (YOLO26n-seg) misclassifies one Screwcap tube as Push-on with low confidence (0.57), whilst the larger YOLOv8m-seg correctly identifies all three tubes with high confidence (0.91--0.97). The gap between mAP\textsubscript{50} and mAP\textsubscript{50--95} (0.985 versus 0.806 overall) suggests that annotation polygon coarseness, rather than model failure, limits performance at higher IoU thresholds. Finer polygon annotation or re-annotation with newer SAM versions could reduce this gap.
+\subsection{Hardware and capture environment}
+
+Data were collected using an Intel RealSense D415 stereo depth camera (Intel Corporation, Santa Clara, USA) connected via USB~3.2 to an Apple M1~Max workstation (64\,GB unified memory). The D415 has a stereo baseline of 55\,mm, a depth field of view of 65\textdegree{}$\times$40\textdegree{}, and an optimal operating range of 0.3--3\,m; it was selected for its high depth accuracy at short working distances. The camera was mounted inverted above a matte black surface at a height of approximately 480--490\,mm, capturing aligned RGB and 16-bit depth streams at 1280$\times$720 resolution and 30\,fps. The 16-bit depth format encodes distance in units of 0.001\,m, preserving millimetre-level precision from the D415's infrared stereo measurement; each depth frame was hardware-registered to the corresponding RGB frame by the camera's onboard processor, providing spatially aligned colour and geometry data without additional computation. A ring light provided even illumination to reduce specular reflections on tube surfaces. The matte black background was chosen to maximise contrast with tube specimens and to provide a uniform depth baseline for the stereo matching algorithm.
+
+Three depth post-processing filters were applied in sequence through the librealsense SDK~\supercite{keselman2017realsense}: (1)~a spatial edge-preserving filter to smooth depth noise while maintaining object boundaries; (2)~a temporal filter to average consecutive frames and reduce flickering; and (3)~a hole-filling filter to interpolate missing depth values caused by infrared reflection on glossy tube surfaces. Despite these filters, some depth artefacts persisted on the matte surface itself (which absorbs infrared), producing scattered black holes in the depth map that were addressed by clamping the depth colourmap range to the 2nd--98th percentile of valid values.
+
+\subsection{Tube specimens and classification scheme}
+
+Unused VACUETTE blood collection tubes (Greiner Bio-One, Kremsm\"{u}nster, Austria) were used throughout. No patient samples or biohazardous material was involved; ethical approval was obtained from the University of Birmingham. All tubes and caps are made from plastic, primarily polypropylene and polyethylene. Four classes were defined based on cap closure mechanism, which determines the disassembly and material recovery pathway~\supercite{lee2004medical}. \Cref{tab:tube_classes} summarises the classification scheme.
+
+\begin{table}[!htb]
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Class} & \textbf{Cap type} & \textbf{Description} \\
+    \midrule
+    Universal  & 31\,mm screw-cap    & General sample collection tubes \\
+    Push-on    & 13\,mm push-fit cap & Blood collection tubes \\
+    Screwcap   & 13--16\,mm screw-cap & Narrower screw-top tubes \\
+    Other      & Non-standard        & Mixed cap types requiring manual handling \\
+    \bottomrule
+  \end{tabular}
+  \caption{Tube classification scheme based on cap closure mechanism.}
+  \label{tab:tube_classes}
+\end{table}
+
+\Cref{fig:dataset_examples} shows all 30 specimens. Humans distinguish tube classes primarily by cap size and profile: Universal caps are conspicuously wide, Push-on caps are smooth shallow discs, Screwcap closures are narrower, and Other encompasses non-standard designs. Cap colour provides an additional cue but is not always reliable. Screwcap and Push-on tubes are the most visually similar and can require physical handling to distinguish with certainty.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_dataset_examples.png}
+  \caption{All 30 specimens in capture order. Segmentation polygons are colour-coded: Other (yellow), Push-on (blue), Screwcap (green), Universal (red). Coloured borders and labels indicate class.}
+  \label{fig:dataset_examples}
+\end{figure}
+
+\subsection{Data collection and annotation}
+
+Data were collected in two phases: an initial 17 specimens were captured first, followed by 13 further specimens to extend class coverage and balance the dataset. Each of the 30 sessions recorded 100 frames of a single tube placed individually on the matte black surface, with orientation varied across frames. Tubes were always filmed one at a time, reflecting how they will enter the sorting system. A total of 3,000 RGB images were collected, each with a paired 16-bit depth map stored simultaneously, yielding 3,000 aligned RGBD pairs. The same 70/15/15 train/validation/test split was applied to both the RGB and depth datasets.
+
+Images were uploaded to Roboflow (version 4.0, Roboflow Inc., Des Moines, USA)~\supercite{ciaglia2022rf100} for annotation and dataset management, including export versioning and split management. Polygon segmentation masks were generated using SAM\,3 (Segment Anything Model, version~3)~\supercite{kirillov2023sam} with click-based prompting: each tube was selected with a single click to generate a mask proposal, which was then reviewed and corrected by hand. Cap boundaries were tightened, label text regions included within the tube mask, and any background bleed trimmed. Fifteen images where SAM\,3 failed to generate a mask despite manual prompting were annotated from scratch.
+
+The annotated dataset was exported in YOLOv8 segmentation format and split into training (2\,100 images), validation (450 images), and test (450 images) subsets. To address class imbalance (Universal had the fewest instances), a rebalanced version of the dataset was also created by oversampling minority classes to equalise representation. \Cref{tab:class_dist} summarises the class distribution of the primary dataset.
+
+\begin{table}[!htb]
+  \centering
+  \begin{tabular}{lrrrr}
+    \toprule
+    \textbf{Class} & \textbf{Total} & \textbf{Train} & \textbf{Valid} & \textbf{Test} \\
+    \midrule
+    Other      & 909  & 637  & 127 & 145 \\
+    Push-on    & 906  & 642  & 134 & 130 \\
+    Screwcap   & 716  & 506  & 109 & 101 \\
+    Universal  & 506  & 345  &  82 &  79 \\
+    \midrule
+    \textbf{Total} & \textbf{3\,037} & \textbf{2\,130} & \textbf{452} & \textbf{455} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Class distribution across dataset splits. Counts reflect individual tube instances.}
+  \label{tab:class_dist}
+\end{table}
+
+\subsection{Model architectures}
+
+Five models were selected for comparison, spanning different scales and input modalities. \Cref{tab:architectures} summarises their key properties.
+
+\begin{table}[!htb]
+  \centering
+  \begin{tabular}{llcl}
+    \toprule
+    \textbf{Model} & \textbf{Input} & \textbf{Params} & \textbf{Key features} \\
+    \midrule
+    YOLOv8m-seg  & RGB   & 27.2\,M & CSPDarknet backbone, FPN neck \\
+    YOLO11n-seg  & RGB   & 2.8\,M  & Improved feature extraction \\
+    YOLO26n-seg  & RGB   & 2.7\,M  & NMS-free end-to-end inference \\
+    YOLO11n-RGBD & RGBD  & 2.8\,M  & 4-channel input with depth \\
+    YOLO26n-depth& Depth & 2.7\,M  & Single-channel depth input \\
+    \bottomrule
+  \end{tabular}
+  \caption{Model architectures compared in this study.}
+  \label{tab:architectures}
+\end{table}
+
+YOLOv8m-seg was included as a medium-scale baseline; it uses a CSP-DarkNet backbone with a Feature Pyramid Network neck~\supercite{lin2017fpn} for multi-scale feature aggregation. All other models are nano variants, giving a 10-fold parameter difference. The comparison assesses whether a lightweight model augmented with depth data can match a much larger RGB-only system.
+
+\subsection{Training configuration}
+
+YOLOv8m-seg was trained locally on the M1~Max CPU using PyTorch~2.12.0~\supercite{paszke2019pytorch} with the Ultralytics framework (v8.4.56). No NVIDIA GPU was available; Apple Metal Performance Shaders (MPS) support was verified but training defaulted to CPU for stability due to occasional numerical differences on the MPS backend. Training ran for 100 epochs ($\sim$55\,hours wall-clock time) with batch size~8, image size~640, AdamW optimiser (lr$_0$\,=\,0.01, weight decay\,=\,0.0005), and early stopping patience of 20 epochs. The learning rate followed a cosine annealing schedule from 0.01 to 0.0001 over the training duration.
+
+Data augmentation followed the mosaic strategy~\supercite{bochkovskiy2020yolov4,shorten2019augmentation}, which combines four training images into a single composite to increase object diversity per batch. Additional augmentations included: horizontal and vertical flip (probability~0.5 each), HSV hue jitter\,=\,0.015, saturation jitter\,=\,0.7, value jitter\,=\,0.4, rotation up to 180\textdegree{} (exploiting tube rotational symmetry), scale\,=\,0.5, perspective warp\,=\,0.0005, and random erasing\,=\,0.4 to simulate partial occlusion. The aggressive rotation range was justified by the controlled overhead capture setup: tubes can appear at any angle relative to the camera and have no inherent ``upright'' orientation.
+
+Three models were trained on Roboflow's cloud GPU infrastructure:
+YOLO11n-seg and YOLO26n-seg used the RGB dataset with default augmentation presets;
+YOLO26n-depth used the depth-only dataset, with each single-channel image replicated to three channels to match the network's expected input format.
+
+For the RGBD experiment, paired depth maps were aligned to RGB frames using the RealSense SDK and concatenated as a fourth channel. The 16-bit depth values were normalised to the 0--255 range based on the calibrated scene depth range, then appended to the 8-bit RGB channels. The YOLO11n architecture was modified at the first convolutional layer to accept 4-channel input. YOLO11n-RGBD was trained locally on the M1~Max CPU for 100 epochs using the same augmentation settings as the RGB models.
+
+A YOLO26n model was additionally trained on the class-balanced dataset to evaluate whether equalising class representation improves minority-class performance. The balanced dataset was constructed by oversampling images containing minority classes (Screwcap, Universal) to achieve approximately equal instance counts across all four classes.
+
+\subsection{Evaluation protocol}
+
+All RGB models were evaluated on the 450-image held-out test split using standard COCO metrics~\supercite{lin2014coco,padilla2020survey}: bounding-box mAP at IoU\,=\,0.50 (mAP\textsubscript{50}) and averaged over IoU thresholds 0.50--0.95 in steps of 0.05 (mAP\textsubscript{50--95}). Mask mAP was computed for all models by measuring the IoU between predicted and ground-truth segmentation polygons at the same threshold range. Precision and recall were computed at IoU\,=\,0.50 for both box and mask predictions. Inference speed was measured as end-to-end latency per image (including pre-processing, forward pass, and post-processing) on the M1~Max CPU, averaged over the full test set. All evaluations used the Ultralytics validation pipeline with batch size~8 and image size~640.
+
+%%====================================================================
+\section{Results}
+%%====================================================================
+
+\subsection{Model comparison}
+
+\Cref{tab:model_comparison} presents the test-set performance of all five models. YOLOv8m-seg achieved the highest mask mAP\textsubscript{50--95} (0.905) among RGB-only models, benefiting from full 100-epoch training and 27.2\,M parameters. Among lightweight models, YOLO26n-seg offered the best speed--accuracy trade-off (23.1\,ms, 0.820 mask mAP\textsubscript{50--95}), slightly outperforming YOLO11n-seg despite similar parameter counts. \Cref{fig:all_classes} shows a representative live inference result with all four tube classes correctly detected and segmented.
 
 \begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_all_classes.png}
+  \caption{All four tube classes detected simultaneously with YOLO26n-seg. Universal (red, 0.97), Push-on (blue, 0.96), Screwcap (green, 0.96), and Other (yellow, 0.96). Masks show pixel-level segmentation boundaries.}
+  \label{fig:all_classes}
+\end{figure}
+
+\begin{table}[!htb]
+  \centering
+  \begin{tabular}{llcccc}
+    \toprule
+    \textbf{Model} & \textbf{Input} & \textbf{Params} & \textbf{Box mAP\textsubscript{50--95}} & \textbf{Mask mAP\textsubscript{50--95}} & \textbf{ms/img} \\
+    \midrule
+    YOLO11n-RGBD  & RGBD  & 2.8\,M  & 0.988 & 0.929 & 22.4 \\
+    YOLOv8m-seg   & RGB   & 27.2\,M & 0.968 & 0.905 & 108.5 \\
+    YOLO26n-seg   & RGB   & 2.7\,M  & 0.951 & 0.820 & 23.1 \\
+    YOLO11n-seg   & RGB   & 2.8\,M  & 0.949 & 0.820 & 21.7 \\
+    YOLO26n-depth & Depth & 2.7\,M  & 0.919 & 0.804 & 22.8 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Model comparison at 640$\times$640. Inference on M1~Max CPU. Sorted by mask mAP\textsubscript{50--95}.}
+  \label{tab:model_comparison}
+\end{table}
+
+\Cref{fig:model_comparison} shows the same results as a comparative bar chart.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_model_comparison.png}
+  \caption{Grouped bar chart comparing box mAP\textsubscript{50--95} (solid bars) and mask mAP\textsubscript{50--95} (hatched bars) for all five models. Input modality: blue for RGB, green for RGBD, orange for depth-only. YOLO11n-RGBD achieves the highest mask score despite using only 2.8\,M parameters.}
+  \label{fig:model_comparison}
+\end{figure}
+
+Two observations stand out: first, the gap between box accuracy (solid) and mask accuracy (hatched) is consistent across all models, confirming that polygon boundary regression is harder than bounding-box regression regardless of architecture or modality; second, the RGBD model (green bars) achieves the highest values on both metrics despite having the same parameter count as the other nano models, making it the clear choice when a depth camera is available.
+
+\subsection{Depth-channel experiments}
+
+The RGBD four-channel model (YOLO11n-RGBD) achieved the highest mask mAP\textsubscript{50--95} of 0.929 and box mAP\textsubscript{50--95} of 0.988 across all models. This shows that adding the depth channel to a lightweight nano model can exceed the accuracy of a much larger RGB-only model (YOLOv8m-seg, 27.2\,M parameters) while running at nearly the same speed as the nano baseline. The RGBD model was trained and evaluated on the full 3,000-image paired RGBD dataset with the same 70/15/15 train/validation/test split used for the RGB models, ensuring the performance advantage reflects genuine cross-set generalisation. The improvement is most pronounced for classes with similar colour profiles but different geometric features: Screwcap versus Universal tubes both have metallic threaded caps, but differ in cap height and tube diameter---features that are directly encoded in the depth channel.
+
+The depth-only single-channel model (YOLO26n-depth) achieved 0.804 mask mAP\textsubscript{50--95}, showing that geometric shape information alone---without any colour---provides enough information for tube classification. This result was surprising given that cap colour is the most visually obvious distinguishing feature to human observers. The model appears to have learned class-discriminative shape features: Push-on caps have a characteristic flat disc profile at one end, Universal tubes are wider with a prominent threaded collar, Screwcap tubes have a narrower threaded profile, and Other tubes have irregular or elongated closure geometries. These shape differences, while subtle to the human eye in 2D images, produce distinct depth signatures when viewed from above.
+
+The practical value of depth-based classification extends beyond accuracy. In clinical environments, tubes may become discoloured through chemical exposure, label adhesive may obscure cap colours, or overhead lighting may produce colour-shifting specular reflections. A depth-based model is inherently immune to all of these failure modes, since the infrared stereo measurement operates independently of visible-light conditions. This makes depth a complementary modality that provides robustness where RGB alone is unreliable.
+
+\subsection{Per-class analysis}
+
+\Cref{tab:perclass} shows the per-class test results for YOLOv8m-seg. Box detection was near-perfect across all classes (mAP\textsubscript{50}\,$\geq$\,0.954). The largest mask-quality gap appeared for the Other class, where mAP\textsubscript{50--95} dropped to 0.748, partly because its irregular profiles were occasionally assigned background confidence by the model. Correctly classifying Other is clinically important: these tubes require manual intervention, and routing them to the wrong stream would contaminate single-polymer recovery batches. Universal tubes, with their symmetrical cylindrical geometry, achieved the highest mask mAP\textsubscript{50--95} of 0.887. Training on the class-balanced dataset improved Screwcap and Universal detection consistency, confirming that the imbalance between classes affected minority-class performance. \Cref{fig:confusion} shows the normalised confusion matrix for YOLOv8m-seg on the test split.
+
+\begin{table}[!htb]
+  \centering
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Class} & \textbf{Box mAP\textsubscript{50}} & \textbf{Box mAP\textsubscript{50--95}} & \textbf{Mask mAP\textsubscript{50}} & \textbf{Mask mAP\textsubscript{50--95}} \\
+    \midrule
+    All        & 0.985 & 0.968 & 0.985 & 0.806 \\
+    Other      & 0.995 & 0.957 & 0.995 & 0.748 \\
+    Push-on    & 0.995 & 0.978 & 0.995 & 0.791 \\
+    Screwcap   & 0.954 & 0.945 & 0.954 & 0.798 \\
+    Universal  & 0.995 & 0.993 & 0.995 & 0.887 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Per-class results for YOLOv8m-seg (best checkpoint, epoch~85) on the 450-image test split.}
+  \label{tab:perclass}
+\end{table}
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_confusion_matrix.png}
+  \caption{Normalised confusion matrix for YOLOv8m-seg on the 450-image test split. Diagonal values close to 1.0 indicate high classification accuracy. The main source of confusion is between Screwcap and Push-on classes, consistent with their visual similarity.}
+  \label{fig:confusion}
+\end{figure}
+
+\subsection{Training dynamics}
+
+The YOLOv8m-seg training run reached peak validation mask mAP\textsubscript{50--95} of 0.911 at epoch~85, after which performance plateaued. Box losses converged smoothly from epoch~20 onwards, whilst mask losses showed higher variance due to the difficulty of polygon boundary regression. No overfitting was observed; training and validation losses remained closely tracked throughout. \Cref{fig:training} shows the loss and metric curves over 100 epochs.
+
+Three distinct phases are visible in the curves. During the first ten epochs, all loss terms drop rapidly as the model learns coarse object boundaries from scratch. Between epochs 10 and 70, box metrics stabilise whilst mask losses continue to decrease slowly, reflecting the finer-grained nature of polygon regression compared to axis-aligned bounding-box prediction. From epoch 70 onwards, validation metrics plateau and oscillate within a narrow band, indicating that the model has converged to a local optimum under the given data and augmentation regime. The persistent gap between box mAP\textsubscript{50--95} (0.968) and mask mAP\textsubscript{50--95} (0.905) visible throughout training suggests that annotation polygon coarseness, not model capacity, is the primary ceiling on mask quality.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_training_curves.png}
+  \caption{YOLOv8m-seg training and validation metrics over 100 epochs. Losses converge rapidly in the first 20 epochs and plateau from epoch 70; validation curves track training closely, confirming no overfitting. The persistent gap between box and mask mAP throughout training reflects the difficulty of polygon regression. Peak validation mask mAP\textsubscript{50--95} of 0.911 was reached at epoch 85.}
+  \label{fig:training}
+\end{figure}
+
+\subsection{Real-time inference}
+
+A live inference pipeline was implemented using the YOLO26n-seg model (selected for its combination of speed and accuracy). The system captures aligned RGB and depth frames from the RealSense D415 at 30\,fps, runs YOLO inference on the RGB frame, and renders a 2$\times$2 grid display (\Cref{fig:pipeline}): (a)~raw RGB stream showing the camera feed; (b)~RGB with colour-coded segmentation masks overlaid at 50\% opacity; (c)~depth heatmap using the TURBO colourmap clipped to the calibrated depth range; and (d)~depth heatmap with the same segmentation masks projected onto the depth view. This four-panel layout allows the operator to simultaneously verify detection accuracy (panel~b), depth quality (panel~c), and spatial alignment between RGB and depth modalities (panel~d).
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_pipeline_grid.png}
+  \caption{Live inference pipeline showing the 2$\times$2 display grid as seen by the operator. Top-left: raw RGB stream. Top-right: RGB with segmentation masks. Bottom-left: depth heatmap (TURBO colourmap). Bottom-right: depth with masks overlaid. The HUD bar shows current model, recording state, FPS, and session statistics.}
+  \label{fig:pipeline}
+\end{figure}
+
+Class-specific colour coding (Universal\,=\,red, Screwcap\,=\,green, Push-on\,=\,blue, Other\,=\,yellow) provides immediate visual feedback. Each detected tube is annotated with its class label and confidence score. Users can switch between all trained models at runtime using the M key, allowing direct visual comparison of model outputs on the same scene without restarting the application. The pipeline also supports snapshot capture (saving all four panels as separate PNG files) and continuous recording at 2\,fps for later review.
+
+The system was tested with up to four tubes simultaneously in the field of view. \Cref{fig:inference_pair} shows both a single-tube detection and a multi-instance scenario, demonstrating that the model handles multiple adjacent objects without confusion. The pipeline maintains interactive frame rates (30--45\,fps for nano models, 9--10\,fps for YOLOv8m) on the M1~Max CPU, showing the system is practical for deployment-stage monitoring.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_inference_pair.png}
+  \caption{Live inference examples. Left: single Universal tube detected (0.93). Right: four Push-on tubes detected simultaneously (0.82--0.97), showing correct multi-instance segmentation without merging adjacent objects.}
+  \label{fig:inference_pair}
+\end{figure}
+
+%%====================================================================
+\section{Discussion}
+%%====================================================================
+
+\subsection{Model scale and accuracy}
+
+The results show a clear trade-off between model size and segmentation accuracy. The medium-scale YOLOv8m-seg (27.2\,M parameters) achieved the highest RGB mask mAP\textsubscript{50--95} of 0.905, while the nano-scale models (YOLO11n, YOLO26n, both $\sim$2.7\,M parameters) reached 0.820---a 9.4\% relative drop---whilst being 4.7$\times$ faster. For real-time deployment where latency is critical, this trade-off is acceptable: a 21.7\,ms inference time corresponds to 46\,fps, well above the 30\,fps camera rate. The speed difference is particularly apparent in the live stream: YOLOv8m-seg runs at approximately 9\,fps (noticeable lag when tubes are moved), whilst the nano models track movement smoothly.
+
+Importantly, adding a depth channel to the nano architecture (YOLO11n-RGBD) recovered most of this accuracy gap (0.929 mask mAP\textsubscript{50--95}) without increasing inference time. Depth fusion is the most practical path to high-accuracy real-time segmentation: scaling up the model increases latency and memory requirements, whereas adding geometric information from an inexpensive depth sensor achieves better results at the same computational cost. The D415 camera adds no processing overhead since depth frames are computed on-device by the camera's ASIC and arrive pre-aligned with RGB frames.
+
+\subsection{Class-level performance and annotation quality}
+
+Screwcap exhibited the lowest detection mAP\textsubscript{50} (0.954 versus 0.995 for other classes). This is partly explained by the lower instance count (716 versus 906 for Push-on) and the visual similarity between Screwcap and Push-on tubes: both have similar cap diameters and can be difficult to distinguish without physical handling. \Cref{fig:screwcap_comparison} shows this in practice: the nano model (YOLO26n-seg) misclassifies one Screwcap tube as Push-on with low confidence (0.57), whilst the larger YOLOv8m-seg correctly identifies all three tubes with high confidence (0.91--0.97). The gap between mAP\textsubscript{50} and mAP\textsubscript{50--95} (0.985 versus 0.806 overall) suggests that annotation polygon coarseness, rather than model failure, limits performance at higher IoU thresholds. Finer polygon annotation or re-annotation with newer SAM versions could reduce this gap.
+
+\begin{figure}[H]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_screwcap_comparison.png}
   \caption{Screwcap detection comparison. Left: YOLO26n-seg misclassifies one tube as Push-on (0.57). Right: YOLOv8m-seg correctly identifies all three as Screwcap (0.91--0.97), demonstrating the accuracy benefit of larger architectures.}
@@ -321,38 +328,38 @@ Training on the class-balanced dataset confirmed that the imbalance affected res
 
 \subsection{Depth integration}
 
-The RGBD experiments show that depth fusion improves segmentation quality: YOLO11n-RGBD's mask mAP\textsubscript{50--95} of 0.929 exceeds even the much larger YOLOv8m-seg (0.905). The depth channel likely provides shape information where colour is unreliable---for example, Screwcap and Universal tubes share similar thread profiles but differ in cap height, a feature directly captured in the depth map.
+The RGBD experiments show that depth fusion improves segmentation quality: YOLO11n-RGBD's mask mAP\textsubscript{50--95} of 0.929 exceeds even the much larger YOLOv8m-seg (0.905). The depth channel provides shape information where colour is unreliable---Screwcap and Universal tubes share similar thread profiles but differ in cap height, a feature directly captured in the depth map.
 
-The depth-only model's strong performance (0.804 mask mAP\textsubscript{50--95}) confirms that tube geometry alone carries enough class information for accurate classification. This has important practical implications for the medical environment: tubes are often made from transparent or semi-transparent plastics with highly reflective surfaces. Under varying clinical lighting, specular highlights and colour shifts can confuse RGB-only classifiers. A depth-based model is inherently robust to these problems, since the infrared stereo measurement is unaffected by visible-light conditions. This makes depth particularly well-suited to the target deployment environment of hospital waste-sorting stations, where lighting may be inconsistent. \Cref{fig:depth} shows the depth heatmap captured by the RealSense D415.
+The depth-only model's strong performance (0.804 mask mAP\textsubscript{50--95}) confirms that tube geometry alone carries enough class information for accurate classification. This has important practical implications for the medical environment: tubes are often made from transparent or semi-transparent plastics with highly reflective surfaces. Under varying clinical lighting, specular highlights and colour shifts can confuse RGB-only classifiers. A depth-based model is inherently robust to these problems, since the infrared stereo measurement is unaffected by visible-light conditions. This makes depth particularly well-suited to hospital waste-sorting stations, where lighting is routinely inconsistent. \Cref{fig:depth} shows the depth heatmap captured by the RealSense D415.
 
-In the heatmap, the matte black surface appears as a uniform warm band (large camera-to-surface distance), while each tube appears as a cooler region of varying width and length depending on class. Universal tubes produce the widest, most prominent depth signature due to their large-diameter cap and body; Push-on tubes appear as narrow elongated strips; and the height difference between the tube body and the raised cap end is visible as a subtle step in the depth values. This cap-end elevation is the key feature that allows the depth-only model to distinguish between classes whose RGB appearance is ambiguous, and it is precisely the kind of geometric signal that is invisible in a standard camera image but captured reliably by stereo infrared ranging.
+In the heatmap, the matte black surface appears as a warm-to-cool gradient across the frame---a mild tilt of the capture surface relative to the camera plane produces this rainbow-like depth band at the edges---while each tube appears as a cooler region of varying width and length depending on class. Universal tubes produce the widest, most prominent depth signature due to their large-diameter cap and body; Push-on tubes appear as narrow elongated strips; and the height difference between the tube body and the raised cap end is visible as a subtle step in the depth values. This cap-end elevation is the key feature that allows the depth-only model to distinguish between classes whose RGB appearance is ambiguous, and it is precisely the kind of geometric signal that is invisible in a standard camera image but captured reliably by stereo infrared ranging.
 
-\begin{figure}[!htb]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_depth_heatmap.png}
   \caption{Depth heatmap from the Intel RealSense D415 (TURBO colourmap, 2nd--98th percentile range). Warmer colours indicate greater distance from the camera. The flat matte surface provides a uniform depth baseline against which tube geometry is clearly distinguishable.}
   \label{fig:depth}
 \end{figure}
 
-The remaining use of depth beyond classification is three-dimensional localisation: converting pixel-space detections into metric coordinates via the camera's intrinsic calibration, enabling precise air-jet triggering on a conveyor belt.
+Three-dimensional localisation---converting pixel-space detections to metric coordinates via the camera's intrinsic calibration---is a direct extension enabled by the depth hardware but reserved for future implementation once the system is deployed on a moving belt.
 
 \subsection{Limitations}
 
-Several limitations should be noted. First, all local training was performed on CPU (Apple M1~Max) due to the absence of a CUDA-capable GPU, resulting in long training times ($\sim$55\,hours for 100 epochs) and limiting hyperparameter exploration. GPU-accelerated training would have enabled more extensive architecture search, learning rate tuning, and longer training runs for the depth models. Second, data were captured with tubes stationary on a flat surface rather than on a moving conveyor belt, meaning the system has not been tested under dynamic conditions with motion blur, varying belt speeds, and potential tube overlap during transport. Third, while the class-balanced dataset addressed the imbalance issue, its Roboflow export introduced additional intermediate class labels (7 classes versus 4), complicating direct comparison with the primary dataset models. A cleaner rebalancing approach using only the four target classes would enable more rigorous comparison. Finally, the RGBD dataset used the same images for training and evaluation due to the small depth-annotated corpus (375~images), so the RGBD and depth metrics should be interpreted as indicative rather than fully independent test results. Expanding the depth-annotated dataset to match the RGB corpus size (3\,000~images with proper 70/15/15 splits) would provide more reliable depth-modality comparisons.
+Several limitations should be noted. First, all local training was performed on CPU (Apple M1~Max) due to the absence of a CUDA-capable GPU, resulting in $\sim$55\,hours per model and preventing any meaningful hyperparameter exploration. GPU-accelerated training would have enabled more extensive architecture search and longer training runs. It would also have made medium-scale YOLO11 and YOLO26 variants feasible to train, enabling a fairer scale-matched comparison with YOLOv8m-seg. Second, data were captured with tubes stationary on a flat surface rather than on a moving conveyor belt, meaning the system has not been tested under dynamic conditions with motion blur, varying belt speeds, and potential tube overlap during transport.
 
 The system does, however, produce zero false positives on an empty scene, indicating that the models have learned meaningful tube features rather than simply detecting any object in the field of view. This is an important validation for deployment scenarios where the camera may observe the sorting surface between tube arrivals.
 
 \subsection{Impact statement}
 
-This work contributes to the environmental sustainability of healthcare by enabling automated segregation of medical tube plastics. The core environmental benefit is a reduction in clinical waste sent to incineration: polypropylene tubes, which make up the majority of blood collection consumables, are 70--80\% recyclable when properly sorted~\supercite{lee2004medical}. Currently, most of these tubes are incinerated alongside hazardous waste because manual sorting is not economically viable at scale. The estimated carbon footprint of incinerating one tonne of clinical waste is approximately 0.5\,tonnes CO\textsubscript{2}e; diverting recyclable plastics to material recovery reduces this by 60--80\% compared to virgin plastic production.
+This work contributes to the environmental sustainability of healthcare by enabling automated segregation of medical tube plastics. The core environmental benefit is a reduction in clinical waste sent to incineration: polypropylene tubes, which make up the majority of blood collection consumables, are 70--80\% recoverable for material reuse when properly segregated by type~\supercite{lee2004medical}. Currently, most of these tubes are incinerated alongside hazardous waste because manual sorting is not economically viable at scale. The estimated carbon footprint of incinerating one tonne of clinical waste is approximately 0.5\,tonnes CO\textsubscript{2}e; diverting recyclable plastics to material recovery reduces this by 60--80\% compared to virgin plastic production.
 
-Healthcare institutions---hospitals, pathology laboratories, and blood banks---stand to benefit through reduced waste-management costs and progress towards net-zero targets~\supercite{nhs2022netzero}. A single large hospital may process thousands of blood tubes daily; even partial automation of the sorting step would reduce staff exposure to sharps hazards while recovering valuable recyclable material. The economic case is straightforward: clinical waste disposal costs approximately \pounds400--600 per tonne in the UK, whilst recycled polypropylene generates revenue of \pounds200--400 per tonne, creating a potential saving of \pounds600--1000 per tonne of material diverted.
+Healthcare institutions---hospitals, pathology laboratories, and blood banks---stand to benefit through reduced waste-management costs and progress towards net-zero targets~\supercite{nhs2022netzero}. A single large hospital may process thousands of blood tubes daily; even partial automation of the sorting step would reduce staff exposure to contaminated waste handling while recovering reusable plastic material. The economic case is straightforward: clinical waste disposal costs approximately \pounds400--600 per tonne in the UK, whilst recovered polypropylene generates revenue of \pounds200--400 per tonne, creating a potential saving of \pounds600--1000 per tonne of material diverted.
 
-In the short term, the trained models and live-inference pipeline provide an immediately usable quality-assurance tool for visual waste auditing. Staff could use the system to verify that tubes are being sorted into the correct waste streams, providing data for compliance reporting without requiring full automation. This monitoring role requires no physical integration with existing waste infrastructure and could be deployed with a single camera and edge compute device.
+Immediately deployable, the trained models and live-inference pipeline provide a quality-assurance tool for visual waste auditing. Staff could use the system to verify that tubes are being sorted into the correct waste streams, providing data for compliance reporting without requiring full automation. This monitoring role requires no physical integration with existing waste infrastructure and could be deployed with a single camera and edge compute device.
 
-In the medium term, integration with Buamah's conveyor-belt sorting system would automate the physical segregation step. The real-time depth-based localisation demonstrated here provides the spatial coordinates needed for pneumatic air-jet timing on a moving belt. The compact model size (5--6\,MB for nano models) means the system can run on inexpensive edge hardware such as an NVIDIA Jetson Nano or Raspberry Pi with a Coral TPU, without requiring cloud connectivity or network infrastructure. The modular architecture (camera + inference + actuation) allows incremental deployment: facilities could start with monitoring-only and add physical sorting later.
+Once integrated with Jessiah Buamah's conveyor-belt sorting system, the physical segregation step becomes fully automated. Depth-based metric localisation, once implemented, will provide the spatial coordinates needed for pneumatic air-jet timing on a moving belt. The compact model size (5--6\,MB for nano models) means the system can run on inexpensive edge hardware such as an NVIDIA Jetson Nano or Raspberry Pi with a Coral TPU, without requiring cloud connectivity or network infrastructure. The modular architecture (camera + inference + actuation) allows incremental deployment: facilities could start with monitoring-only and add physical sorting later.
 
-In the long term, scaling this approach across NHS trusts could divert significant quantities of medical plastics from incineration annually. The NHS generates approximately 156\,000 tonnes of clinical waste per year across over 1\,200 hospitals; even capturing 5\% of recyclable tube plastics would recover approximately 7\,800 tonnes of material annually. The depth-based approach is particularly suited to scaling, since it does not require controlled lighting conditions that would be difficult to maintain across diverse hospital environments. Furthermore, the classification framework is extensible: additional tube types, syringes, and other recyclable medical consumables could be added by collecting new training data without modifying the underlying architecture.
+Scaled across NHS trusts, this approach could divert significant quantities of medical plastics from incineration annually. The NHS generates approximately 156\,000 tonnes of clinical waste per year across over 1\,200 hospitals; even capturing 5\% of recyclable tube plastics would recover approximately 7\,800 tonnes of material annually. The depth-based approach is particularly suited to scaling, since it does not require controlled lighting conditions that would be difficult to maintain across diverse hospital environments. Furthermore, the classification framework is extensible: additional tube types, syringes, and other recyclable medical consumables could be added by collecting new training data without modifying the underlying architecture.
 
 The broader societal impact extends beyond waste reduction. By demonstrating that AI-driven sorting achieves classification accuracy above 90\%, this work provides evidence that automated systems can meet the quality standards required for medical waste segregation---a domain where misclassification carries both safety and regulatory consequences. This evidence base supports the case for policy changes that would mandate or incentivise automated sorting in healthcare waste management.
 
@@ -366,21 +373,21 @@ This project developed and evaluated a real-time instance segmentation system fo
 
 A real-time inference pipeline was implemented and demonstrated with live camera input, rendering segmentation masks over both RGB and depth streams at interactive frame rates. The system supports runtime model switching, multi-instance detection, and continuous recording for quality assurance applications. The pipeline grid display (\Cref{fig:pipeline}) provides operators with simultaneous access to RGB detection, depth geometry, and mask alignment views.
 
-The key finding of this work is that depth fusion offers a more efficient path to high accuracy than model scaling: the 2.8\,M-parameter YOLO11n-RGBD exceeded the 27.2\,M-parameter YOLOv8m-seg in mask accuracy whilst maintaining sub-25\,ms inference times. This has direct implications for edge deployment in clinical settings, where computational resources are limited but accuracy requirements are high.
+The key finding of this work is that depth fusion offers a more efficient path to high accuracy than model scaling: the 2.8\,M-parameter YOLO11n-RGBD exceeded the 27.2\,M-parameter YOLOv8m-seg in mask accuracy whilst maintaining sub-25\,ms inference times. This has direct implications for edge deployment, where computational resources are constrained but accuracy requirements are high.
 
-Future work should focus on four interconnected areas. (1)~\textit{Dynamic conveyor-belt validation}: the system must be tested on tubes moving at realistic belt speeds (0.3--0.5\,m/s), where motion blur, tube tumbling, and variable inter-tube spacing introduce distribution shifts not present in the static training data. Synthetic blur augmentation and on-belt data collection are both viable routes to closing this gap. (2)~\textit{Contaminated and degraded specimens}: real-world tubes may carry blood residue, damaged labels, or chemical discolouration that was absent from the clean training set. Evaluating model robustness on a purpose-built contaminated test set would quantify performance degradation and motivate targeted data collection or domain-adaptation techniques. (3)~\textit{Integration with downstream sorting and disassembly}: the classification output and pixel-mask centroid produced by this system feed directly into the reinforcement-learning air-jet controller developed by Buamah---the RGBD model's metric 3D coordinates provide the belt-position input the PPO/SAC policy requires for timed actuation. A parallel integration opportunity exists with students working on automated cap-removal disassembly: the instance mask pinpoints the cap--shaft boundary, enabling a disassembly head to engage at the correct location and separate polypropylene caps from tube bodies for component-level recycling. (4)~\textit{Expanding the depth-annotated dataset and modality}: depth training used only 375 images with shared train/test splits; a full 3\,000-image RGBD corpus with proper held-out evaluation would give reliable depth-modality comparisons and enable the 3D localisation capability to be validated against ground-truth coordinates measured with a calibrated reference.
+The most pressing gap is dynamic validation: the system performed well on static tubes but has not been tested at conveyor-belt speeds (0.3--0.5\,m/s), where motion blur and tube tumbling introduce distribution shifts absent from the training data. Robustness to contaminated or degraded specimens---blood residue, damaged labels, or discolouration absent from the training set---also warrants a dedicated test before clinical deployment. On the integration side, the RGBD model's metric 3D coordinates slot directly into Buamah's air-jet controller, making hardware integration a near-term milestone rather than speculative future work. The remaining experimental gap is dynamic validation on a moving belt. Metric localisation---converting per-mask pixel coordinates to 3D positions via the camera's intrinsic calibration---is the next capability to implement; once available, it will provide Jessiah Buamah's air-jet controller with precise belt-position inputs to close the loop from vision to actuation.
 
 %%====================================================================
 %TC:ignore
 \section*{Acknowledgements}
 
-The author thanks Dr~Shiv Ashutosh Katiyar for supervision and guidance throughout this project, and Jessiah Buamah for the foundational conveyor-belt simulation and reinforcement-learning framework upon which this work builds.
+The author thanks Shiv Ashutosh Katiyar for supervision and guidance throughout this project, and Jessiah Buamah for the foundational conveyor-belt simulation and reinforcement-learning framework upon which this work builds.
 
 Generative AI assistance was provided by GitHub Copilot (Claude Sonnet~4.6, Anthropic/Microsoft, accessed July~2026). The tool was used as a coding assistant for dataset-processing scripts and figure generation, and as an editorial assistant for improving the grammar, syntax, and formatting of report text. The tool was not used to develop or alter the scientific arguments, conclusions, or data analysis presented in this report, and the editorial contribution did not exceed this remit.
 
 \section*{Data and code availability}
 
-The annotated dataset is publicly available on Roboflow Universe at \url{https://universe.roboflow.com/tades-workspace/medtube-segmentation}. The full project code---including capture scripts, training configurations, and the live-inference pipeline---is available on GitHub at \url{https://github.com/tadun/medtube_segmentation}.
+The annotated dataset is publicly available on Roboflow at \url{https://app.roboflow.com/tadeass-workspace/medtube-segmentation}. The full project code---including capture scripts, training configurations, and the live-inference pipeline---is available on GitHub at \url{https://github.com/tadun/medtube_segmentation}.
 
 \singlespacing
 \emergencystretch 3em
