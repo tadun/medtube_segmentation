@@ -2,6 +2,36 @@
 \addbibresource{references.bib}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric}
+\usepackage{tabularx}
+\usepackage{csquotes}
+
+% Pipeline stage macro: #1=image file  #2=bg colour  #3=title  #4=bullet lines
+\newcommand{\pstage}[4]{%
+  \noindent
+  \begin{tabular}{@{}p{0.34\linewidth}@{\hspace{0.03\linewidth}}c@{\hspace{0.03\linewidth}}p{0.54\linewidth}@{}}
+    \colorbox{#2}{\parbox{\dimexpr\linewidth-2\fboxsep}{%
+      \raggedright\vspace{3pt}%
+      \textbf{#3}\\[3pt]%
+      \footnotesize #4%
+      \vspace{3pt}}} &
+    $\rightarrow$ &
+    \centering
+    \IfFileExists{figures/#1}%
+      {\includegraphics[height=3.2cm,width=\linewidth,keepaspectratio]{figures/#1}}%
+      {\rule{0pt}{3.2cm}} \\
+  \end{tabular}%
+}
+\newcommand{\psarrow}{%
+  \par\vspace{0.1cm}\hfill{\large$\Big\downarrow$}\hfill\par\vspace{0.1cm}}
+% Pre-defined stage colours (avoids fragile inline-mixing in \newcommand args)
+\AtBeginDocument{%
+  \colorlet{stageGray}{gray!18}%
+  \colorlet{stageGreen}{green!12}%
+  \colorlet{stageOrange}{orange!15}%
+  \colorlet{stageBlue}{blue!12}%
+  \colorlet{stagePurple}{purple!10}%
+  \colorlet{stagePlaceholder}{black!8}%
+}
 
 
 \begin{document}
@@ -15,72 +45,33 @@
 \renewcommand{\MySupervisor}{Shiv Ashutosh Katiyar}
 \maketitle
 \onehalfspacing
+\setlength{\emergencystretch}{3em}
 \raggedbottom
 %TC:endignore
 
 %%====================================================================
 \section{Introduction}
+\label{sec:introduction}
 %%====================================================================
 
-Every large hospital processes thousands of blood collection tubes each day; virtually all are incinerated. In England alone, healthcare generates an estimated 156,000\,tonnes of clinical waste annually, the majority of which is non-hazardous and potentially recoverable~\supercite{who2024healthcare,windfeld2015medical}. The COVID-19 pandemic highlighted the scale: over 27,000\,tonnes of personal protective equipment were distributed in England within six months~\supercite{rizan2021environmental}. Polypropylene and polyethylene tubes, which make up the bulk of blood collection containers, can be recovered and reused as material at rates of 70--80\% when properly segregated by type~\supercite{lee2004medical}; cap removal further enables component-level recovery of both body and closure materials. The NHS commitment to net-zero emissions by 2040~\supercite{nhs2022netzero} provides strong institutional motivation to divert these materials from incineration.
+Every large hospital processes thousands of blood collection tubes each day; virtually all are incinerated. In England alone, healthcare generates an estimated 156,000\,tonnes of clinical waste annually, the majority of which is non-hazardous and potentially recoverable~\supercite{who2024healthcare,windfeld2015medical}. The COVID-19 pandemic highlighted the scale: over 27,000\,tonnes of personal protective equipment were distributed in England within six months~\supercite{rizan2021environmental}. Polypropylene and polyethylene tubes, which make up the bulk of blood collection containers, can be recovered and reused as material at rates of 70--80\% when properly segregated by type~\supercite{lee2004medical}; cap removal further enables component-level recovery of both body and closure materials. Realising this potential requires a structured circular pathway: tubes are first \emph{segregated} by closure type, then \emph{opened} to separate cap from body, before being \emph{cleaned} and \emph{sterilised} to decontaminate surfaces, and finally returned to direct \emph{reuse} or directed to single-polymer material recovery~\supercite{lee2004medical}---every downstream step depends on accurate prior classification. The NHS commitment to net-zero emissions by 2040~\supercite{nhs2022netzero} provides strong institutional motivation to divert these materials from incineration.
 
-Manual sorting of medical tubes is labour-intensive, error-prone, and exposes workers to contaminated biological samples~\supercite{chartier2014safe}. Computer vision offers a scalable alternative. The YOLO (You Only Look Once) family of detectors~\supercite{redmon2016yolo} enables real-time object detection by treating localisation as a single regression problem. Subsequent versions built on the original architecture: YOLOv8~\supercite{jocher2023yolov8} added a decoupled head for separate classification and regression branches, YOLO11~\supercite{jocher2024yolo11} improved feature extraction efficiency for mobile deployment, and YOLO26 introduced end-to-end NMS-free inference. Instance segmentation extends detection by predicting pixel-level masks for each detected object, providing precise spatial boundaries rather than approximate bounding boxes. Mask~R-CNN~\supercite{he2017maskrcnn} established the two-stage approach, whilst YOLO-seg variants achieve similar mask quality at much higher throughput by sharing the detection backbone for mask generation.
+Manual sorting is not only labour-intensive and error-prone but is fundamentally unsafe at scale: even capped and nominally sealed tubes carry contaminated exterior surfaces from centrifuge and processing environments, exposing workers to unacceptable biological-sample risk~\supercite{chartier2014safe}. Automated classification is therefore a safety necessity, not merely a convenience. Computer vision offers a scalable alternative. The YOLO (You Only Look Once) family of detectors~\supercite{redmon2016yolo} enables real-time object detection by treating localisation as a single regression problem. Subsequent versions built on the original architecture: YOLOv8~\supercite{jocher2023yolov8} added a decoupled head for separate classification and regression branches, YOLO11~\supercite{jocher2024yolo11} improved feature extraction efficiency for mobile deployment, and YOLO26 introduced end-to-end NMS-free inference. Instance segmentation extends detection by predicting pixel-level masks for each detected object, providing precise spatial boundaries rather than approximate bounding boxes. Mask~R-CNN~\supercite{he2017maskrcnn} established the two-stage approach, whilst YOLO-seg variants achieve similar mask quality at much higher throughput by sharing the detection backbone for mask generation.
 
 For a tube-sorting application, instance masks offer three concrete advantages over bounding-box detection. First, per-tube mask centroids and principal axes will guide a downstream air-jet actuator to the correct position on the tube, a capability that becomes critical once the system is deployed on a moving belt. Second, when tubes are adjacent on a conveyor, axis-aligned bounding boxes merge into a single region and cannot distinguish individual objects, whereas instance masks preserve separate, non-rectangular boundaries. Third, component-level disassembly requires pixel-level knowledge of where the cap meets the tube shaft; bounding boxes cannot provide this, and the present work lays the mask-level foundation for that downstream step.
 
 Depth sensing provides additional geometric information that can improve object detection and classification. The Intel RealSense D400 series uses active infrared stereo to generate dense depth maps at video frame rates~\supercite{keselman2017realsense}. The D415 model projects a structured infrared pattern onto the scene and computes disparity between left and right infrared cameras to triangulate depth at each pixel, achieving sub-millimetre precision at short range. Previous work has shown that combining RGB and depth channels through multi-stream convolutional architectures improves recognition, particularly under occlusion and lighting variation~\supercite{eitel2015rgbd}. Gupta et al.~\supercite{gupta2014learning} demonstrated that encoding depth as HHA (horizontal disparity, height above ground, angle with gravity) provides a CNN-compatible three-channel representation that outperforms raw depth input. Depth is especially relevant for medical tubes because their transparent and reflective plastic surfaces often cause problems for RGB-only systems---specular highlights, colour ambiguity under varying lighting, and transparent tube bodies can confuse purely colour-based classifiers. This is particularly relevant for VACUETTE-type tubes, many of which have transparent or semi-transparent bodies whose cap colours also vary between manufacturers and batches. Depth maps, by contrast, reliably capture the tube's physical shape regardless of surface appearance. These considerations motivate the inclusion of depth-channel training in this project, where paired RGB--depth data are fused into four-channel RGBD inputs and also evaluated as depth-only single-channel models. A further benefit of depth is that it enables metric localisation: applying the camera's intrinsic calibration to pixel-space detections would in principle convert each mask centroid to a millimetre-accurate 3D coordinate, giving a downstream actuator the belt position needed to trigger an air jet at precisely the right moment. This capability is not yet implemented in the present work but is directly supported by the depth hardware already in place, and is discussed as a priority for future integration.
 
-This project extends earlier work by Jessiah Buamah, who developed a digital-twin framework for medical tube segregation using reinforcement learning with PPO and SAC algorithms to control pneumatic air jets on a simulated conveyor belt. That system used PyBullet physics simulation with a YOLOv8n detector trained on fewer than 1,000 synthetic images, without a standardised background, controlled lighting, or sufficient class diversity, resulting in limited classification accuracy that constrained the RL agent's sorting performance. The present work addresses this gap by building a high-quality annotated dataset of real medical tube images and comparing multiple YOLO segmentation architectures across RGB, RGBD, and depth-only modalities to find the best model for real-time tube classification. The specific objectives are: (1)~to collect and annotate a dataset of medical tube images captured with an Intel RealSense D415 depth camera; (2)~to train and evaluate YOLO-family models for four-class instance segmentation across different input modalities; and (3)~to demonstrate real-time inference with live camera input as a proof-of-concept for integration with downstream sorting hardware. \Cref{fig:pipeline_flow} summarises the end-to-end pipeline adopted in this work.
+The plastic composition of blood collection tubes bears directly on both their visual appearance and their recovery pathway. VACUETTE tube bodies are moulded from polypropylene (PP) or polyethylene terephthalate (PET): PP is semi-crystalline with a refractive index of approximately~1.49, giving a characteristic translucent, milky appearance, whilst PET is optically clearer and more rigid. Caps are formed from PP or polyethylene (PE), with surface finish ranging from smooth push-fit discs to threaded collars with helical ridges. Polystyrene (PS), encountered in some laboratory consumables, presents a high surface gloss and a different fracture and recycling pathway from PP or PE, making accurate material discrimination essential for stream purity. Under varying clinical lighting, specular highlights migrate across threaded cap surfaces and semi-transparent bodies show shifting internal shadow patterns---both of which destabilise the RGB colour cue. Depth maps, acquired by the D415's infrared stereo system independently of visible light, encode surface geometry (cap height, diameter, thread profile) as a stable discriminating feature regardless of optical ambiguity. This material-physics argument motivates the RGB-D fusion approach adopted in this work.
 
-\begin{figure}[!htb]
+This project extends earlier work by Jessiah Buamah, who developed a digital-twin framework for medical tube segregation using reinforcement learning with PPO and SAC algorithms to control pneumatic air jets on a simulated conveyor belt. That system used PyBullet physics simulation with a YOLOv8n detector trained on fewer than 1,000 synthetic images, without a standardised background, controlled lighting, or sufficient class diversity, resulting in limited classification accuracy that constrained the RL agent's sorting performance. The present work addresses this gap by building a high-quality annotated dataset of real medical tube images and comparing multiple YOLO segmentation architectures across RGB, RGBD, and depth-only modalities to find the best model for real-time tube classification. Prior automated sorting literature has focused mainly on domestic recycling streams and packaging, using synthetic training images or bounding-box detection~\supercite{eitel2015rgbd,gupta2014learning}; no published study applies instance segmentation to medical single-use tube classification with paired depth data. The present work makes three contributions that distinguish it from this body of work. First, it introduces a real-image RGBD instance segmentation dataset for clinical blood collection tubes, whose transparent and reflective surfaces are precisely the conditions under which RGB-only approaches fail. Second, it makes the link between device engineering and circular processing requirements explicit: the cap closure mechanism governs the disassembly route, cleaning protocol, and material stream, so classification accuracy at the tube-type level is a gating factor for the entire recovery pipeline. Third, it demonstrates empirically that adding a depth channel to a compact model is a more efficient path to high accuracy than scaling the model on RGB alone---a result with direct implications for edge-deployable clinical hardware.
+
+This work provides the vision component of a larger integrated system: an inclined feed channel on the conveyor belt presents one tube at a time to the overhead camera, guaranteeing single-tube presentation and matching the one-tube-per-session data collection protocol used throughout. The production-line target uses the SR2000 industrial scanning head, which demands sub-25\,ms classification latency; all experiments reported here are performed on static images in a controlled laboratory environment, establishing accuracy and speed baselines before dynamic testing at belt speed once the conveyor hardware is commissioned. The specific objectives are: (1)~to collect and annotate a dataset of single-use medical tube images captured with an Intel RealSense D415 depth camera; (2)~to train and evaluate YOLO-family models for four-class instance segmentation across RGB, RGBD, and depth-only modalities; and (3)~to demonstrate real-time inference as a proof-of-concept for integration with the downstream conveyor-belt sorting hardware. \Cref{fig:pipeline_flow} summarises the end-to-end pipeline adopted in this work.
+
+\begin{figure}[p]
 \centering
-\begin{tikzpicture}[
-  node distance=0.5cm,
-  stage/.style={rectangle, rounded corners=5pt,
-                text width=13.5cm, minimum height=1.05cm,
-                align=center, draw=black!45, font=\small},
-  arrow/.style={->, >=stealth, thick, draw=black!50}
-]
-\node (capture) [stage, fill=blue!8]
-  {\textbf{Data Collection}\quad
-   Intel RealSense D415 $\cdot$ 30 sessions $\times$ 100 frames
-   $\cdot$ aligned RGB\,+\,16-bit depth at 1280$\times$720, 30\,fps};
-
-\node (annotate) [stage, fill=orange!8, below=of capture]
-  {\textbf{Annotation}\quad
-   Roboflow upload $\cdot$ SAM\,3 auto-segmentation $\cdot$ manual polygon refinement
-   $\cdot$ 4 classes: Other, Push-on, Screwcap, Universal};
-
-\node (prepare) [stage, fill=yellow!8, below=of annotate]
-  {\textbf{Dataset Preparation}\quad
-   3\,000 images $\cdot$ 70/15/15 train\,/\,val\,/\,test split
-   $\cdot$ RGB $\cdot$ RGBD (4-ch) $\cdot$ depth-only (1-ch) variants};
-
-\node (train) [stage, fill=gray!8, below=of prepare, minimum height=1.6cm]
-  {\textbf{Model Training}\quad
-   YOLOv8m-seg (RGB, local CPU, 100\,ep)\quad
-   YOLO11n-seg (RGB, cloud GPU)\quad
-   YOLO26n-seg (RGB, cloud GPU)\\
-   YOLO11n-RGBD (RGBD, local CPU, 100\,ep)\quad
-   YOLO26n-depth (depth, cloud GPU)};
-
-\node (eval) [stage, fill=purple!6, below=of train]
-  {\textbf{Evaluation}\quad
-   COCO metrics $\cdot$ Box\,\&\,Mask $\text{mAP}_{50}$, $\text{mAP}_{50\text{--}95}$
-   $\cdot$ per-class analysis $\cdot$ confusion matrices $\cdot$ inference speed};
-
-\node (live) [stage, fill=green!8, below=of eval]
-  {\textbf{Live Inference Pipeline}\quad
-   YOLO26n-seg at 30\,fps $\cdot$ 2$\times$2 RGB\,+\,Depth display grid
-   $\cdot$ runtime model switching $\cdot$ snapshot recording};
-
-\draw [arrow] (capture) -- (annotate);
-\draw [arrow] (annotate) -- (prepare);
-\draw [arrow] (prepare) -- (train);
-\draw [arrow] (train) -- (eval);
-\draw [arrow] (eval) -- (live);
-\end{tikzpicture}
-  \caption{End-to-end project pipeline. Data are collected with the Intel RealSense D415, annotated on Roboflow, and prepared as three modality variants. Five YOLO models are trained and evaluated with COCO metrics; the best-performing real-time model feeds a live inference display.}
+  \includegraphics[width=\linewidth,height=0.92\textheight,keepaspectratio]{figures/FYP_Figure_1.pdf}
+  \caption{End-to-end project pipeline. Each stage shows the pipeline step with a representative screenshot. Top to bottom: Data Collection, Data Annotation, Model Training, Model Evaluation, Live Deployment.}
   \label{fig:pipeline_flow}
 \end{figure}
 
@@ -100,17 +91,21 @@ Unused VACUETTE blood collection tubes (Greiner Bio-One, Kremsm\"{u}nster, Austr
 
 \begin{table}[!htb]
   \centering
-  \begin{tabular}{lll}
+  \begin{tabular}{m{4.2cm}llp{4.5cm}}
     \toprule
-    \textbf{Class} & \textbf{Cap type} & \textbf{Description} \\
+    \textbf{Specimen} & \textbf{Class} & \textbf{Cap type} & \textbf{Description} \\
     \midrule
-    Universal  & 31\,mm screw-cap    & General sample collection tubes \\
-    Push-on    & 13\,mm push-fit cap & Blood collection tubes \\
-    Screwcap   & 13--16\,mm screw-cap & Narrower screw-top tubes \\
-    Other      & Non-standard        & Mixed cap types requiring manual handling \\
+    \IfFileExists{figures/fig_class_universal.png}{\includegraphics[width=\linewidth,keepaspectratio]{figures/fig_class_universal.png}}{\framebox[4.1cm]{\rule{0pt}{2.6cm}}}
+      & Universal  & 31\,mm screw-cap     & General sample collection \\ [2pt]
+    \IfFileExists{figures/fig_class_pushon.png}{\includegraphics[width=\linewidth,keepaspectratio]{figures/fig_class_pushon.png}}{\framebox[4.1cm]{\rule{0pt}{2.6cm}}}
+      & Push-on    & 13\,mm push-fit cap  & Blood collection tubes \\ [2pt]
+    \IfFileExists{figures/fig_class_screwcap.png}{\includegraphics[width=\linewidth,keepaspectratio]{figures/fig_class_screwcap.png}}{\framebox[4.1cm]{\rule{0pt}{2.6cm}}}
+      & Screwcap   & 13--16\,mm screw-cap & Narrower screw-top tubes \\ [2pt]
+    \IfFileExists{figures/fig_class_other.png}{\includegraphics[width=\linewidth,keepaspectratio]{figures/fig_class_other.png}}{\framebox[4.1cm]{\rule{0pt}{2.6cm}}}
+      & Other      & Non-standard         & Mixed types, manual handling \\
     \bottomrule
   \end{tabular}
-  \caption{Tube classification scheme based on cap closure mechanism.}
+  \caption{Tube classification scheme based on cap closure mechanism. Specimens shown are tubes 2 (Universal), 13 (Push-on), 27 (Screwcap), and 21 (Other); cropped RGB, no annotation.}
   \label{tab:tube_classes}
 \end{table}
 
@@ -154,19 +149,20 @@ The annotated dataset was exported in YOLOv8 segmentation format and split into 
 Five models were selected for comparison, spanning different scales and input modalities. \Cref{tab:architectures} summarises their key properties.
 
 \begin{table}[!htb]
-  \centering
-  \begin{tabular}{llcl}
+  \centering\small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{llccp{5.0cm}p{2.8cm}}
     \toprule
-    \textbf{Model} & \textbf{Input} & \textbf{Params} & \textbf{Key features} \\
+    \textbf{Model} & \textbf{Input} & \textbf{Ch.} & \textbf{Params} & \textbf{Key architectural features} & \textbf{Training} \\
     \midrule
-    YOLOv8m-seg  & RGB   & 27.2\,M & CSPDarknet backbone, FPN neck \\
-    YOLO11n-seg  & RGB   & 2.8\,M  & Improved feature extraction \\
-    YOLO26n-seg  & RGB   & 2.7\,M  & NMS-free end-to-end inference \\
-    YOLO11n-RGBD & RGBD  & 2.8\,M  & 4-channel input with depth \\
-    YOLO26n-depth& Depth & 2.7\,M  & Single-channel depth input \\
+    YOLOv8m-seg   & RGB   & 3   & 27.2\,M & CSPDarknet backbone, FPN neck, decoupled head & CPU (M1 Max), 100\,ep, $\sim$55\,h \\
+    YOLO11n-seg   & RGB   & 3   & 2.8\,M  & Improved feature extraction efficiency        & Cloud GPU \\
+    YOLO26n-seg   & RGB   & 3   & 2.7\,M  & NMS-free end-to-end, anchor-free              & Cloud GPU \\
+    YOLO11n-RGBD  & RGBD  & 4   & 2.8\,M  & Modified first conv, 4-channel RGB-D input    & CPU (M1 Max), 100\,ep, $\sim$55\,h \\
+    YOLO26n-depth & Depth & 1$\to$3 & 2.7\,M & Single depth channel replicated to 3          & Cloud GPU \\
     \bottomrule
   \end{tabular}
-  \caption{Model architectures compared in this study.}
+  \caption{Model architectures compared in this study. Ch.\ = input channel count; for YOLO26n-depth the single depth channel is replicated to three to match the network input format.}
   \label{tab:architectures}
 \end{table}
 
@@ -344,7 +340,7 @@ Three-dimensional localisation---converting pixel-space detections to metric coo
 
 \subsection{Limitations}
 
-Several limitations should be noted. First, all local training was performed on CPU (Apple M1~Max) due to the absence of a CUDA-capable GPU, resulting in $\sim$55\,hours per model and preventing any meaningful hyperparameter exploration. GPU-accelerated training would have enabled more extensive architecture search and longer training runs. It would also have made medium-scale YOLO11 and YOLO26 variants feasible to train, enabling a fairer scale-matched comparison with YOLOv8m-seg. Second, data were captured with tubes stationary on a flat surface rather than on a moving conveyor belt, meaning the system has not been tested under dynamic conditions with motion blur, varying belt speeds, and potential tube overlap during transport.
+Several limitations should be noted. First, all local training was performed on CPU (Apple M1~Max) due to the absence of a CUDA-capable GPU, resulting in $\sim$55\,hours per model and preventing any meaningful hyperparameter exploration. GPU-accelerated training would have enabled more extensive architecture search and longer training runs. It would also have made medium-scale YOLO11 and YOLO26 variants feasible to train, enabling a fairer scale-matched comparison with YOLOv8m-seg. Second, data were captured with tubes stationary on a flat surface rather than on a moving conveyor belt, so the system has not been validated under the dynamic conditions---motion blur, tube tumbling, and varying belt speeds---that are absent from the training distribution. A practical intermediate step before the full industrial belt hardware arrives is to evaluate the pipeline on a treadmill or low-cost tabletop conveyor at progressively increasing speeds. Such an evaluation would quantify performance degradation with velocity, identify whether motion-blur augmentation is required in the training pipeline, and produce a speed--accuracy curve to guide the final deployment configuration. Addressing both platform types would simultaneously strengthen the dynamic-robustness case and provide a reproducible benchmark for future work.
 
 The system does, however, produce zero false positives on an empty scene, indicating that the models have learned meaningful tube features rather than simply detecting any object in the field of view. This is an important validation for deployment scenarios where the camera may observe the sorting surface between tube arrivals.
 
@@ -362,7 +358,7 @@ Scaled across NHS trusts, this approach could divert significant quantities of m
 
 The broader societal impact extends beyond waste reduction. By demonstrating that AI-driven sorting achieves classification accuracy above 90\%, this work provides evidence that automated systems can meet the quality standards required for medical waste segregation---a domain where misclassification carries both safety and regulatory consequences. This evidence base supports the case for policy changes that would mandate or incentivise automated sorting in healthcare waste management.
 
-It is worth noting that within the circular economy waste hierarchy, reuse is ranked above recycling: retaining a product in use avoids the energy cost of re-melting and reprocessing, and preserves the embodied manufacturing energy of the original item. For blood-contact medical tubes, direct reuse is prohibited under UK infection-control regulations (HTM~07-01), but automated segregation nonetheless enables the highest achievable tier: clean, class-specific material streams that specialist recyclers can accept as single-polymer polypropylene rather than mixed clinical waste. The quality of recyclate---and therefore its commercial and environmental value---is strongly dependent on material purity; a mixed plastic stream yields a lower-grade recyclate that is typically downcycled or rejected. Beyond recycling, precise classification is also a prerequisite for automated cap-removal disassembly: separating the polypropylene or polyethylene cap from the polyethylene terephthalate tube body yields two high-purity component streams, each worth considerably more than the blended material. Connecting the vision system developed here with a disassembly module would therefore represent a step up the waste hierarchy from recycling towards remanufacture-grade material recovery.
+Within the circular economy waste hierarchy, reuse ranks above recycling: retaining a product in use avoids the energy cost of re-melting and reprocessing and preserves the embodied manufacturing energy of the original item. For blood-contact medical tubes, direct reuse is prohibited under UK infection-control regulations (HTM~07-01), but automated segregation nonetheless enables the highest achievable tier: clean, class-specific material streams that specialist recyclers can accept as single-polymer polypropylene rather than mixed clinical waste. The quality of recyclate---and therefore its commercial and environmental value---is strongly dependent on material purity; a mixed plastic stream yields a lower-grade recyclate that is typically downcycled or rejected. Beyond recycling, precise classification is also a prerequisite for automated cap-removal disassembly: separating the polypropylene or polyethylene cap from the polyethylene terephthalate tube body yields two high-purity component streams, each worth considerably more than the blended material. Connecting the vision system developed here with a disassembly module would therefore represent a step up the waste hierarchy from recycling towards remanufacture-grade material recovery.
 
 %%====================================================================
 \section{Conclusions}
@@ -374,7 +370,9 @@ A real-time inference pipeline was implemented and demonstrated with live camera
 
 The key finding of this work is that depth fusion offers a more efficient path to high accuracy than model scaling: the 2.8\,M-parameter YOLO11n-RGBD exceeded the 27.2\,M-parameter YOLOv8m-seg in mask accuracy whilst maintaining sub-25\,ms inference times. This has direct implications for edge deployment, where computational resources are constrained but accuracy requirements are high.
 
-The most pressing gap is dynamic validation: the system performed well on static tubes but has not been tested at conveyor-belt speeds (0.3--0.5\,m/s), where motion blur and tube tumbling introduce distribution shifts absent from the training data. Robustness to contaminated or degraded specimens---blood residue, damaged labels, or discolouration absent from the training set---also warrants a dedicated test before clinical deployment. On the integration side, the RGBD model's metric 3D coordinates slot directly into Buamah's air-jet controller, making hardware integration a near-term milestone rather than speculative future work. The remaining experimental gap is dynamic validation on a moving belt. Metric localisation---converting per-mask pixel coordinates to 3D positions via the camera's intrinsic calibration---is the next capability to implement; once available, it will provide Jessiah Buamah's air-jet controller with precise belt-position inputs to close the loop from vision to actuation.
+The most pressing gap is dynamic validation: the system performed well on static tubes but has not been tested at conveyor-belt speeds (0.3--0.5\,m/s), where motion blur and tumbling introduce distribution shifts absent from the training data. An intermediate evaluation on a treadmill or tabletop conveyor---feasible before the full industrial belt hardware is commissioned---would yield a speed--accuracy curve and determine whether motion-blur augmentation is needed in the training pipeline. Robustness to contaminated specimens---blood residue, damaged labels, or surface discolouration---also warrants dedicated testing before clinical deployment. Metric localisation---converting per-mask pixel coordinates to 3D positions via the camera intrinsics---is the next capability to implement; once available it will supply Jessiah Buamah's air-jet controller with precise belt-position inputs and close the loop from vision to actuation.
+
+Returning to the research questions posed in \Cref{sec:introduction}: \textbf{RQ1} is answered through the classification scheme---the cap closure mechanism (screw-fit, push-fit, non-standard) determines the disassembly route, cleaning protocol, and material destination, making closure-type identification the gating step for any automated circular processing pipeline. \textbf{RQ2} is partially answered by the depth-channel results: device geometry (cap height, diameter, thread profile) encodes material-grade information accessible to a stereo depth sensor but invisible to a standard RGB camera, indicating that design choices enhancing geometric distinctiveness between closure types would directly improve automated identification accuracy and compatibility with downstream circular processing.
 
 %%====================================================================
 %TC:ignore

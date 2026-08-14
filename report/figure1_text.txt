@@ -1,0 +1,64 @@
+FIGURE 1 — END-TO-END PROJECT PIPELINE
+=======================================
+
+STAGE 1: Data Collection
+Hardware: Intel RealSense D415 stereo depth camera, ring-light illumination,
+          matte black background, USB 3.2 to Apple M1 Max workstation.
+Protocol: 30 capture sessions, one tube per session, 100 frames each.
+Output:   3,000 aligned RGB + 16-bit depth image pairs at 1280×720, 30 fps.
+Notes:    Tubes placed individually (matching the inclined-conveyor single-tube
+          presentation of the target deployment). Auto-exposure disabled;
+          depth post-processed with spatial, temporal and hole-fill filters.
+
+↓
+
+STAGE 2: Data Annotation
+Platform: Roboflow (v4.0) — upload, versioning, split management, export.
+Method:   SAM 3 (Segment Anything Model v3) click-based auto-segmentation
+          followed by manual polygon refinement of cap boundaries.
+Classes:  4 cap-closure types — Other, Push-on, Screwcap, Universal.
+Scale:    3,000 images annotated; 15 images annotated from scratch where
+          SAM 3 failed. Dataset split 70 / 15 / 15 (train / val / test).
+
+↓
+
+STAGE 3: Model Training
+Models:   5 YOLO-family instance segmentation models compared.
+Inputs:   RGB (3-channel), RGBD (4-channel, depth appended), Depth-only (1-ch).
+Hardware: YOLOv8m-seg and YOLO11n-RGBD trained locally on M1 Max CPU (~55 h
+          each); YOLO11n-seg, YOLO26n-seg, YOLO26n-depth on Roboflow cloud GPU.
+Config:   100–278 epochs, image size 640×640, AdamW optimiser,
+          cosine LR schedule, aggressive augmentation (mosaic, 180° rotation).
+Best:     YOLO11n-RGBD — mask mAP50-95 = 0.929 (2.8 M parameters).
+
+↓
+
+STAGE 4: Model Evaluation
+Metrics:  COCO box and mask mAP at IoU 0.50 (mAP50) and 0.50–0.95 (mAP50-95).
+Analysis: Per-class precision, recall, confusion matrices, F1 curves.
+Speed:    End-to-end inference latency (pre-process + forward + post-process)
+          measured on M1 Max CPU, averaged over the 450-image test split.
+Key finding: YOLO11n-RGBD (2.8 M params, RGBD) outperforms YOLOv8m-seg
+          (27.2 M params, RGB-only) at nearly 5× higher frame rate.
+
+↓
+
+STAGE 5: Live Deployment
+Pipeline: YOLO26n-seg running at 30 fps on M1 Max CPU.
+Display:  2×2 grid — raw RGB stream, RGB with masks, depth heatmap,
+          depth heatmap with masks overlaid.
+Features: Runtime model switching (M key), snapshot capture (Space),
+          continuous recording at 2 fps, per-class colour coding.
+Status:   Validated on static tubes; dynamic belt testing pending conveyor
+          hardware delivery. SR2000 scanning head identified for production line.
+
+
+CAPTION
+-------
+End-to-end project pipeline from hardware capture through live deployment.
+Each stage is illustrated with a representative screenshot. Data are collected
+with the Intel RealSense D415 depth camera, annotated on Roboflow using
+SAM 3-assisted polygon labelling, and prepared as RGB, RGBD, and depth-only
+variants. Five YOLO-family segmentation models are trained and evaluated with
+COCO metrics; the best-performing model (YOLO11n-RGBD, mask mAP50-95 = 0.929)
+feeds a live 30 fps inference pipeline.
