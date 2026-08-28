@@ -116,15 +116,6 @@ Unused VACUETTE blood collection tubes (Greiner Bio-One, Kremsm\"{u}nster, Austr
   \label{tab:tube_classes}
 \end{table}
 
-\Cref{fig:dataset_examples} shows all 30 specimens. Humans distinguish tube classes primarily by cap size and profile: Universal caps are conspicuously wide, Push-on caps are smooth discs, Screwcap closures have a 16\,mm threaded profile, and Other encompasses non-standard designs. Cap colour provides an additional cue but is not always reliable. Screwcap and Push-on tubes are the most visually similar and can require physical handling to distinguish with certainty.
-
-\begin{figure}[!htb]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/fig_dataset_examples.png}
-  \caption{All 30 specimens in capture order. Segmentation polygons are colour-coded: Other (yellow), Push-on (blue), Screwcap (green), Universal (red). Coloured borders and labels indicate class.}
-  \label{fig:dataset_examples}
-\end{figure}
-
 \FloatBarrier
 \subsection{Data collection and annotation}
 
@@ -151,6 +142,15 @@ The annotated dataset was exported in YOLOv8 segmentation format and split into 
   \caption{Class distribution across dataset splits. Counts reflect individual tube instances.}
   \label{tab:class_dist}
 \end{table}
+
+\Cref{fig:dataset_examples} shows all 30 specimens. Humans distinguish tube classes primarily by cap size and profile: Universal caps are conspicuously wide, Push-on caps are smooth discs, Screwcap closures have a 16\,mm threaded profile, and Other encompasses non-standard designs. Cap colour provides an additional cue but is not always reliable. Screwcap and Push-on tubes are the most visually similar and can require physical handling to distinguish with certainty.
+
+\begin{figure}[!htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_dataset_examples.png}
+  \caption{All 30 specimens in capture order. Segmentation polygons are colour-coded: Other (yellow), Push-on (blue), Screwcap (green), Universal (red). Coloured borders and labels indicate class.}
+  \label{fig:dataset_examples}
+\end{figure}
 
 \subsection{Model architectures}
 
